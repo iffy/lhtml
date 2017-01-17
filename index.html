@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>LHTML</title>
+    <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    </style>
+  </head>
+  <body>
+    <webview id="theview" autosize="on" minwidth="400" minheight="400" style="width: 100vw; height: 100vh;"></webview>
+<script>
+const {ipcRenderer} = require('electron');
+let current_file;
+
+onload = () => {
+  const webview = document.getElementById('theview');
+  const loadstart = () => {
+    console.log('loading');
+  }
+  const loadstop = () => {
+    console.log('load stop');
+  }
+  webview.addEventListener('did-start-loading', loadstart);
+  webview.addEventListener('did-stop-loading', loadstop);
+
+  // Open...
+  ipcRenderer.on('load-file', (event, filepath) => {
+    console.log('load file', event, filepath);
+    current_file = filepath;
+    webview.src = 'file://' + current_file;
+  })
+
+  // Reload...
+  ipcRenderer.on('reload-file', (event) => {
+    webview.src = webview.src;
+  })
+}
+</script>
+  </body>
+</html>
