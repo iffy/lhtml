@@ -11,7 +11,7 @@
     </style>
   </head>
   <body>
-    <webview id="theview" autosize="on" minwidth="400" minheight="400" style="width: 100vw; height: 100vh;"></webview>
+    <webview id="theview" autosize="on" minwidth="400" minheight="400" style="width: 100vw; height: 100vh;" preload="./guest-preload.js"></webview>
 <script>
 const {ipcRenderer} = require('electron');
 let current_file;
@@ -20,9 +20,12 @@ onload = () => {
   const webview = document.getElementById('theview');
   const loadstart = () => {
     console.log('loading');
+    webview.openDevTools();
   }
   const loadstop = () => {
     console.log('load stop');
+    document.title = 'LHTML - ' + webview.getTitle();
+    webview.send('ping');
   }
   webview.addEventListener('did-start-loading', loadstart);
   webview.addEventListener('did-stop-loading', loadstop);
@@ -36,8 +39,14 @@ onload = () => {
 
   // Reload...
   ipcRenderer.on('reload-file', (event) => {
-    webview.src = webview.src;
-  })
+    webview.reload();
+  });
+
+  webview.addEventListener('ipc-message', (event) => {
+    console.log('got event', event);
+  });
+
+  console.log('webview.webContents', webview.webContents);
 }
 </script>
   </body>
