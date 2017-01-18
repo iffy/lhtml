@@ -1,38 +1,40 @@
 //
 // This script is executed right when an LHTML file is loaded.
 //
+const {ipcRenderer} = require('electron');
+const {RPCService} = require('./rpc.js');
+const _ = require('lodash');
+
 let LHTML = {};
 
-const {ipcRenderer} = require('electron');
-ipcRenderer.on('ping', () => {
-  ipcRenderer.sendToHost('pong');
+//----------------------------------------------------------------------------
+// RPCService
+//----------------------------------------------------------------------------
+
+
+var RPC = new RPCService(ipcRenderer, {
+  default_target: ipcRenderer,
+  default_receiver: ipcRenderer,
 });
-
-let _rpc_id = 0;
-let _pending_rpc_responses = {};
-
-function RPC(method, params) {
-  let msg_id = _rpc_id++;
-  return new Promise((resolve, reject) => {
-    _pending_rpc_responses[msg_id] = {
-      resolve: resolve,
-      reject: reject,
-    };
-    ipcRenderer.send('rpc', {
-      method: method,
-      params: params,
-      id: msg_id,
+RPC.listen();
+RPC.handlers = {
+  echo: (data, cb, eb) => {
+    cb('echo:' + data);
+  },
+  get_save_data: (data, cb, eb) => {
+    if (SAVER) {
+      cb(SAVER());
+    }
+  },
+  emit_event: (data, cb, eb) => {
+    var event = data.key;
+    var event_data = data.data;
+    _.each(EVENT_HANDLERS[data.key], (func) => {
+      func(EVENT_HANDLERS[data.data]);
     });
-  });
-}
-
-ipcRenderer.on('rpc-response', (event, data) => {
-  if (data.error) {
-    _pending_rpc_responses[data.id].reject(data.error);
-  } else {
-    _pending_rpc_responses[data.id].resolve(data.result);
+    cb(null);
   }
-})
+}
 
 //----------------------------------------------------------------------------
 // Public API
@@ -40,7 +42,28 @@ ipcRenderer.on('rpc-response', (event, data) => {
 //  Every function on LHTML is available to guest files.
 //----------------------------------------------------------------------------
 
-let SAVER;
+//
+//  The default SAVER will emit the current content of the html page.
+//
+LHTML.defaultSaver = () => {
+  console.log('defaultSaver');
+  // Thanks http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript/10162353#10162353
+  let doctype = '';
+  let node = document.doctype;
+  if (node) {
+    doctype = "<!DOCTYPE "
+      + node.name
+      + (node.publicId ? ' PUBLIC "' + node.publicId + '"' : '')
+      + (!node.publicId && node.systemId ? ' SYSTEM' : '') 
+      + (node.systemId ? ' "' + node.systemId + '"' : '')
+      + '>';
+  }
+  return {
+    'index.html': doctype + document.documentElement.outerHTML,
+  };
+}
+
+let SAVER = LHTML.defaultSaver;
 
 //
 //  Register the function to be called when the user requests to Save.
@@ -52,21 +75,24 @@ LHTML.registerSaver = (func) => {
 }
 
 //
-//  Write a file to the filesystem
+//  Register something to handle events.
 //
-LHTML.writeFile = (relpath, content) => {
-  ipcRenderer.sendToHost('save_file', {
-    path: relpath,
-    content: content,
+//  Some events:
+//    saved
+let EVENT_HANDLERS = {};
+LHTML.on = (event, handler) => {
+  if (!EVENT_HANDLERS[event]) {
+    EVENT_HANDLERS[event] = [];
+  }
+  EVENT_HANDLERS[event].push(handler);
+}
+
+
+RPC.call('echo', 'Some message')
+  .then((response) => {
+    console.log('echo response:', response);
   });
-}
-
-//
-//  Read the entire contents of a file from the filesystem
-//
-LHTML.readFile = (relpath) => {
-
-}
 
 
 window.LHTML = LHTML;
+console.log('LHTML finished loading');

@@ -19,32 +19,40 @@ onload = () => {
   const webview = document.getElementById('theview');
   const loadstart = () => {
     console.log('loading');
-    webview.openDevTools();
   }
   const loadstop = () => {
     console.log('load stop');
     document.title = webview.getTitle();
-    webview.send('ping');
   }
   webview.addEventListener('did-start-loading', loadstart);
   webview.addEventListener('did-stop-loading', loadstop);
 
+  // Handle main -> guest communication
+  ipcRenderer.on('rpc', (event, message) => {
+    console.log('rpc passthru', message);
+    webview.send('rpc', message);
+  })
+
+  // Toggle Dev Tools
+  ipcRenderer.on('toggleDevTools', (event) => {
+    webview.getWebContents().toggleDevTools();
+  })
+
   // Open...
   ipcRenderer.on('load-file', (event, url) => {
-    console.log('load file', event, url);
+    console.log('load file', url);
     webview.src = url;
   })
 
   // Reload...
   ipcRenderer.on('reload-file', (event) => {
+    console.log('reload-file');
     webview.reload();
   });
 
   webview.addEventListener('ipc-message', (event) => {
     console.log('got event', event);
   });
-
-  console.log('webview.webContents', webview.webContents);
 }
 </script>
   </body>

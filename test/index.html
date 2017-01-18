@@ -1,13 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!DOCTYPE html><html><head>
   <title>Some test page</title>
 </head>
 <body>
 Test page.
 <script>
 document.write('got to the end');
-</script>
+if (LHTML) {
+  console.log('LHTML exists');
+  LHTML.on('saved', (data) => {
+    console.log('saved', data);
+  })
+}
+</script>got to the endgot to the end
 <div>
   /tmp/duck:
   <img src="file:///tmp/duck.jpg">
@@ -16,5 +20,5 @@ document.write('got to the end');
   duck.jpg
   <img src="duck.jpg">
 </div>
-</body>
-</html>
+
+</body></html>

@@ -2,6 +2,8 @@ const {electron, ipcMain, dialog, app, BrowserWindow, Menu, protocol} = require(
 const Path = require('path');
 const fs = require('fs');
 const URL = require('url');
+const {RPCService} = require('./rpc.js');
+const _ = require('lodash');
 
 let template = [{
   label: 'File',
@@ -24,9 +26,26 @@ let template = [{
     label: 'Save',
     accelerator: 'CmdOrCtrl+S',
     click() {
-      return saveApp();
+      return saveDocument();
     }
   }
+  ]
+},
+{
+  label: 'View',
+  submenu: [
+    {
+      label: 'Show/Hide Main Dev Tools',
+      click() {
+        toggleMainDevTools();
+      },
+    },
+    {
+      label: 'Show/Hide Document Dev Tools',
+      click() {
+        toggleDocumentDevTools();
+      },
+    },
   ]
 }]
 
@@ -87,11 +106,10 @@ function createDefaultWindow() {
 function createLHTMLWindow() {
   let win = new BrowserWindow({width: 800, height: 600});
   win.loadURL(`file://${__dirname}/lhtml_container.html`);
-  win.webContents.openDevTools({
-    mode: 'undocked',
-  });
-  win.on('closed', () => {
-  });
+  // win.on('closed', () => {
+  // });
+
+  // Close the default window once a guest window has been opened.
   if (default_window) {
     default_window.close();
   }
@@ -117,7 +135,8 @@ function safe_join(base, part) {
   }
 }
 
-let OPENFILES = {};
+let OPENDOCUMENTS = {};
+let WINDOW2DOC_INFO = {};
 
 protocol.registerStandardSchemes(['lhtml'])
 
@@ -127,7 +146,7 @@ app.on('ready', function() {
     const parsed = URL.parse(request.url);
     const domain = parsed.host;
     const path = parsed.path;
-    const root_dir = OPENFILES[domain].dir;
+    const root_dir = OPENDOCUMENTS[domain].dir;
     const file_path = safe_join(root_dir, path);
 
     callback({path: file_path});
@@ -167,12 +186,19 @@ function openFile() {
     title: 'Open...',
     properties: ['openFile', 'openDirectory'],
   }, (filePaths) => {
+    if (!filePaths) {
+      return;
+    }
     // Open a new window
     let win = createLHTMLWindow();
-    
+
     var filePath = filePaths[0];
     var dirPath;
-    var file_info = {};
+    let ident = randomIdentifier();
+    let doc_info = {
+      id: ident,
+      window_id: win.id,
+    };
     if (fs.lstatSync(filePath).isFile()) {
       if (filePath.endswith('.lhtml')) {
         // zipped directory.
@@ -182,11 +208,10 @@ function openFile() {
         return;
       }
     } else {
-      file_info.dir = filePath;
+      doc_info.dir = filePath;
     }
 
-    var ident = randomIdentifier();
-    OPENFILES[ident] = file_info;
+    WINDOW2DOC_INFO[win.id] = OPENDOCUMENTS[ident] = doc_info;
     var url = `lhtml://${ident}/index.html`;
     win.webContents.on('did-finish-load', (event) => {
       console.log('sending load-file');
@@ -196,32 +221,45 @@ function openFile() {
 }
 
 function reloadFile() {
-  //win.webContents.send('reload-file');
+  BrowserWindow.getFocusedWindow().webContents.send('reload-file');
 }
 
-function saveApp() {
-  console.log('saveApp');
+function saveDocument() {
+  console.log('saveDocument');
+  let current = currentDocument();
+  console.log('current', current);
+  if (current) {
+    var guest = current.webContents;
+    RPC.call('get_save_data', null, guest)
+      .then((save_data) => {
+        console.log('got save_data', save_data);
+        _.each(save_data, (guts, filename) => {
+          var doc_info = WINDOW2DOC_INFO[current.id];
+          var full_path = safe_join(doc_info.dir, filename);
+          fs.writeFileSync(full_path, guts);
+        });
+        RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
+      })
+  }
 }
 
-// RPC
-let _rpc_id = 0;
-let _pending_rpc_responses = {};
-
-function RPC(target, method, params) {
-  let msg_id = _rpc_id++;
-  return new Promise((resolve, reject) => {
-    _pending_rpc_responses[msg_id] = {
-      resolve: resolve,
-      reject: reject,
-    };
-    ipcMain.send('rpc', {
-      method: method,
-      params: params,
-      id: msg_id,
-    });
-  });
+function toggleMainDevTools() {
+  currentDocument().toggleDevTools();
+}
+function toggleDocumentDevTools() {
+  currentDocument().webContents.send('toggleDevTools');
 }
 
-ipcMain.on('rpc', (message) => {
-  console.log('got rpc message', message);
-})
+
+function currentDocument() {
+  let win = BrowserWindow.getFocusedWindow();
+  return win;
+}
+
+let RPC = new RPCService(ipcMain);
+RPC.listen();
+RPC.handlers = {
+  echo: (data, cb, eb) => {
+    cb('echo: ' + data);
+  },
+};
