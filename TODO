@@ -8,6 +8,7 @@ General:
  ☐ Title updates whenever guest title updates
  ✔ Show that no file is open when no file is open @done (17-01-18 16:27)
  ☐ Grey out "Save/Save as" when nothing is open
+ ☐ Automatic updates
 
 Directory:
  ✔ Save @done (17-01-18 15:50)
