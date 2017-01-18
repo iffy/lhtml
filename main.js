@@ -4,6 +4,8 @@ const fs = require('fs');
 const URL = require('url');
 const {RPCService} = require('./rpc.js');
 const _ = require('lodash');
+const Tmp = require('tmp');
+const AdmZip = require('adm-zip');
 
 let template = [{
   label: 'File',
@@ -106,8 +108,15 @@ function createDefaultWindow() {
 function createLHTMLWindow() {
   let win = new BrowserWindow({width: 800, height: 600});
   win.loadURL(`file://${__dirname}/lhtml_container.html`);
-  // win.on('closed', () => {
-  // });
+  win.on('closed', () => {
+    let doc_info = WINDOW2DOC_INFO[win.id];
+    if (doc_info.tmpdir) {
+      console.log('deleting tmpdir');
+      doc_info.tmpdir.removeCallback();
+    }
+    delete WINDOW2DOC_INFO[win.id];
+    delete OPENDOCUMENTS[doc_info.id];
+  });
 
   // Close the default window once a guest window has been opened.
   if (default_window) {
@@ -203,9 +212,14 @@ function openFile() {
       if (filePath.endswith('.lhtml')) {
         // zipped directory.
         console.log('lhtml file (zipped)');
+        doc_info.tmpdir = Tmp.dirSync();
+        doc_info.dir = doc_info.tmpdir.name;
+        let zip = new AdmZip(filePath);
+        zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
+        doc_info.zip = zip;
       } else {
         // unknown file type
-        return;
+        throw 'unknown file type';
       }
     } else {
       doc_info.dir = filePath;
@@ -233,11 +247,21 @@ function saveDocument() {
     RPC.call('get_save_data', null, guest)
       .then((save_data) => {
         console.log('got save_data', save_data);
+        var doc_info = WINDOW2DOC_INFO[current.id];
         _.each(save_data, (guts, filename) => {
-          var doc_info = WINDOW2DOC_INFO[current.id];
           var full_path = safe_join(doc_info.dir, filename);
           fs.writeFileSync(full_path, guts);
+          if (doc_info.zip) {
+            console.log('updating in zip', filename);
+            zip.updateFile(filename, guts);
+          }
         });
+
+        // Overwrite original zip, if it's a zip
+        if (doc_info.zip) {
+          console.log('writing zip');
+          doc_info.zip.writeZip();
+        }
         RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
       })
   }
