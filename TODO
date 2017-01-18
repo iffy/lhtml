@@ -1,6 +1,8 @@
 General:
+ ☐ Let there be multiple files open at once
  ☐ Undo
  ☐ Redo
+ ☐ Close
  ☐ guest request a window size
  ☐ Double-click in finder opens in LHTML viewer
  ☐ Title updates whenever guest title updates
@@ -9,9 +11,11 @@ General:
 
 Directory:
  ☐ Save
+ ☐ Reload
  ☐ Save as
 
 Zipfile:
  ☐ Open
+ ☐ Reload
  ☐ Save
  ☐ Save as

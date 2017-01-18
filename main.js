@@ -3,8 +3,6 @@ const Path = require('path');
 const fs = require('fs');
 const URL = require('url');
 
-let win;
-
 let template = [{
   label: 'File',
   submenu: [
@@ -75,25 +73,29 @@ if (process.platform === 'darwin') {
   })
 }
 
-function createWindow() {
-  // Create the browser window.
-  win = new BrowserWindow({width: 800, height: 600});
+let default_window = null;
 
-  // and load the index.html of the app.
+function createDefaultWindow() {
+  default_window = new BrowserWindow({width: 400, height: 400});
+  default_window.on('closed', () => {
+    default_window = null;
+  });
+  default_window.loadURL(`file://${__dirname}/default.html`);
+  return default_window;
+}
+
+function createLHTMLWindow() {
+  let win = new BrowserWindow({width: 800, height: 600});
   win.loadURL(`file://${__dirname}/index.html`);
-
-  // Open the DevTools.
   win.webContents.openDevTools({
     mode: 'undocked',
   });
-
-  // Emitted when the window is closed.
   win.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    win = null;
   });
+  if (default_window) {
+    default_window.close();
+  }
+  return win;
 }
 
 
@@ -136,7 +138,7 @@ app.on('ready', function() {
   })
 
   // The default window
-  createWindow();
+  createDefaultWindow();
 
   // Menu
   const menu = Menu.buildFromTemplate(template);
@@ -155,8 +157,8 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (win === null) {
-    createWindow();
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createDefaultWindow();
   }
 });
 
@@ -165,6 +167,9 @@ function openFile() {
     title: 'Open...',
     properties: ['openFile', 'openDirectory'],
   }, (filePaths) => {
+    // Open a new window
+    let win = createLHTMLWindow();
+    
     var filePath = filePaths[0];
     var dirPath;
     var file_info = {};
@@ -183,14 +188,40 @@ function openFile() {
     var ident = randomIdentifier();
     OPENFILES[ident] = file_info;
     var url = `lhtml://${ident}/index.html`;
-    win.webContents.send('load-file', url);
+    win.webContents.on('did-finish-load', (event) => {
+      console.log('sending load-file');
+      win.webContents.send('load-file', url);
+    });
   });
 }
 
 function reloadFile() {
-  win.webContents.send('reload-file');
+  //win.webContents.send('reload-file');
 }
 
 function saveApp() {
   console.log('saveApp');
 }
+
+// RPC
+let _rpc_id = 0;
+let _pending_rpc_responses = {};
+
+function RPC(target, method, params) {
+  let msg_id = _rpc_id++;
+  return new Promise((resolve, reject) => {
+    _pending_rpc_responses[msg_id] = {
+      resolve: resolve,
+      reject: reject,
+    };
+    ipcMain.send('rpc', {
+      method: method,
+      params: params,
+      id: msg_id,
+    });
+  });
+}
+
+ipcMain.on('rpc', (message) => {
+  console.log('got rpc message', message);
+})
