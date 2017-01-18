@@ -3,6 +3,9 @@ General:
  ☐ Redo
  ☐ guest request a window size
  ☐ Double-click in finder opens in LHTML viewer
+ ☐ Title updates whenever guest title updates
+ ☐ Show that no file is open when no file is open
+ ☐ Grey out "Save/Save as" when nothing is open
 
 Directory:
  ☐ Save

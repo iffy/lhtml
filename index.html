@@ -23,7 +23,7 @@ onload = () => {
   }
   const loadstop = () => {
     console.log('load stop');
-    document.title = 'LHTML - ' + webview.getTitle();
+    document.title = webview.getTitle();
     webview.send('ping');
   }
   webview.addEventListener('did-start-loading', loadstart);
