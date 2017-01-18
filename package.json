@@ -1,6 +1,9 @@
 {
-    "name": "lhtml",
-    "productName": "LHTML",
-    "version": "0.1.0",
-    "main": "main.js"
+  "name": "lhtml",
+  "productName": "LHTML",
+  "version": "0.1.0",
+  "main": "main.js",
+  "devDependencies": {
+    "http-server": "^0.9.0"
+  }
 }

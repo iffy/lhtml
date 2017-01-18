@@ -12,4 +12,14 @@ LHTML.pong = (something) => {
   ipcRenderer.sendToHost('pong');
 }
 
+//
+//  Save a file to the filesystem.
+//
+LHTML.saveRelativeFile = (relpath, content) => {
+  ipcRenderer.sendToHost('save_file', {
+    path: relpath,
+    content: content,
+  });
+}
+
 window.LHTML = LHTML;

@@ -1,4 +1,7 @@
-const {electron, ipcMain, dialog, app, BrowserWindow, Menu} = require('electron');
+const {electron, ipcMain, dialog, app, BrowserWindow, Menu, protocol} = require('electron');
+const Path = require('path');
+const fs = require('fs');
+const URL = require('url');
 
 let win;
 
@@ -19,6 +22,13 @@ let template = [{
       return reloadFile();
     },
   },
+  {
+    label: 'Save',
+    accelerator: 'CmdOrCtrl+S',
+    click() {
+      return saveApp();
+    }
+  }
   ]
 }]
 
@@ -73,7 +83,9 @@ function createWindow() {
   win.loadURL(`file://${__dirname}/index.html`);
 
   // Open the DevTools.
-  win.webContents.openDevTools();
+  win.webContents.openDevTools({
+    mode: 'undocked',
+  });
 
   // Emitted when the window is closed.
   win.on('closed', () => {
@@ -84,7 +96,45 @@ function createWindow() {
   });
 }
 
+
+function randomIdentifier() {
+  return 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function(c) {
+    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+};
+
+function safe_join(base, part) {
+  var path = fs.realpathSync(Path.normalize(`${base}/${part}`));
+  var base = fs.realpathSync(base);
+
+  if (path.indexOf(base) === 0) {
+    return path;
+  } else {
+    throw 'a fit';
+  }
+}
+
+let OPENFILES = {};
+
+protocol.registerStandardSchemes(['lhtml'])
+
 app.on('ready', function() {
+  // Handle lhtml://<path>
+  protocol.registerFileProtocol('lhtml', (request, callback) => {
+    const parsed = URL.parse(request.url);
+    const domain = parsed.host;
+    const path = parsed.path;
+    const root_dir = OPENFILES[domain].dir;
+    const file_path = safe_join(root_dir, path);
+
+    callback({path: file_path});
+  }, (error) => {
+    if (error) {
+      console.error('Failed to register protocol');
+    }
+  })
+
   // The default window
   createWindow();
 
@@ -113,13 +163,34 @@ app.on('activate', () => {
 function openFile() {
   dialog.showOpenDialog({
     title: 'Open...',
-    properties: ['openFile'],
+    properties: ['openFile', 'openDirectory'],
   }, (filePaths) => {
-    console.log('filePaths', filePaths);
-    win.webContents.send('load-file', filePaths[0]);
+    var filePath = filePaths[0];
+    var dirPath;
+    var file_info = {};
+    if (fs.lstatSync(filePath).isFile()) {
+      if (filePath.endswith('.lhtml')) {
+        // zipped directory.
+        console.log('lhtml file (zipped)');
+      } else {
+        // unknown file type
+        return;
+      }
+    } else {
+      file_info.dir = filePath;
+    }
+
+    var ident = randomIdentifier();
+    OPENFILES[ident] = file_info;
+    var url = `lhtml://${ident}/index.html`;
+    win.webContents.send('load-file', url);
   });
 }
 
 function reloadFile() {
   win.webContents.send('reload-file');
+}
+
+function saveApp() {
+  console.log('saveApp');
 }

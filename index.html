@@ -14,7 +14,6 @@
     <webview id="theview" autosize="on" minwidth="400" minheight="400" style="width: 100vw; height: 100vh;" preload="./guest-preload.js"></webview>
 <script>
 const {ipcRenderer} = require('electron');
-let current_file;
 
 onload = () => {
   const webview = document.getElementById('theview');
@@ -31,10 +30,9 @@ onload = () => {
   webview.addEventListener('did-stop-loading', loadstop);
 
   // Open...
-  ipcRenderer.on('load-file', (event, filepath) => {
-    console.log('load file', event, filepath);
-    current_file = filepath;
-    webview.src = 'file://' + current_file;
+  ipcRenderer.on('load-file', (event, url) => {
+    console.log('load file', event, url);
+    webview.src = url;
   })
 
   // Reload...
