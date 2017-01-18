@@ -1,21 +1,23 @@
 General:
- ☐ Let there be multiple files open at once
+ ✔ Let there be multiple files open at once @done (17-01-18 16:26)
  ☐ Undo
  ☐ Redo
  ☐ Close
  ☐ guest request a window size
  ☐ Double-click in finder opens in LHTML viewer
  ☐ Title updates whenever guest title updates
- ☐ Show that no file is open when no file is open
+ ✔ Show that no file is open when no file is open @done (17-01-18 16:27)
  ☐ Grey out "Save/Save as" when nothing is open
 
 Directory:
  ✔ Save @done (17-01-18 15:50)
  ✔ Reload @done (17-01-18 15:52)
  ☐ Save as
+ ☐ Close
 
 Zipfile:
- ☐ Open
+ ✔ Open @done (17-01-18 16:26)
  ☐ Reload
- ☐ Save
+ ✔ Save @done (17-01-18 16:26)
  ☐ Save as
+ ☐ Close

@@ -9,6 +9,7 @@
   "dependencies": {
     "adm-zip": "^0.4.7",
     "lodash": "^4.17.4",
+    "rimraf": "^2.5.4",
     "tmp": "0.0.31"
   }
 }

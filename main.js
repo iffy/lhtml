@@ -6,6 +6,7 @@ const {RPCService} = require('./rpc.js');
 const _ = require('lodash');
 const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
+const rimraf = require('rimraf');
 
 let template = [{
   label: 'File',
@@ -108,13 +109,17 @@ function createDefaultWindow() {
 function createLHTMLWindow() {
   let win = new BrowserWindow({width: 800, height: 600});
   win.loadURL(`file://${__dirname}/lhtml_container.html`);
+  var win_id = win.id;
   win.on('closed', () => {
-    let doc_info = WINDOW2DOC_INFO[win.id];
+    let doc_info = WINDOW2DOC_INFO[win_id];
     if (doc_info.tmpdir) {
-      console.log('deleting tmpdir');
-      doc_info.tmpdir.removeCallback();
+      rimraf(doc_info.dir, (error) => {
+        if (error) {
+          console.error('Error deleting tmpdir:', error);
+        }
+      });
     }
-    delete WINDOW2DOC_INFO[win.id];
+    delete WINDOW2DOC_INFO[win_id];
     delete OPENDOCUMENTS[doc_info.id];
   });
 
@@ -193,7 +198,11 @@ app.on('activate', () => {
 function openFile() {
   dialog.showOpenDialog({
     title: 'Open...',
-    properties: ['openFile', 'openDirectory'],
+    properties: ['openFile'],
+    filters: [
+      {name: 'LHTML', extensions: ['lhtml']},
+      {name: 'All Files', extensions: ['*']},
+    ],
   }, (filePaths) => {
     if (!filePaths) {
       return;
@@ -209,12 +218,12 @@ function openFile() {
       window_id: win.id,
     };
     if (fs.lstatSync(filePath).isFile()) {
-      if (filePath.endswith('.lhtml')) {
+      if (filePath.endsWith('.lhtml')) {
         // zipped directory.
-        console.log('lhtml file (zipped)');
         doc_info.tmpdir = Tmp.dirSync();
         doc_info.dir = doc_info.tmpdir.name;
         let zip = new AdmZip(filePath);
+        console.log('extracting to', doc_info.dir);
         zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
         doc_info.zip = zip;
       } else {
@@ -239,20 +248,16 @@ function reloadFile() {
 }
 
 function saveDocument() {
-  console.log('saveDocument');
   let current = currentDocument();
-  console.log('current', current);
   if (current) {
     var guest = current.webContents;
     RPC.call('get_save_data', null, guest)
       .then((save_data) => {
-        console.log('got save_data', save_data);
-        var doc_info = WINDOW2DOC_INFO[current.id];
+        let doc_info = WINDOW2DOC_INFO[current.id];
         _.each(save_data, (guts, filename) => {
           var full_path = safe_join(doc_info.dir, filename);
           fs.writeFileSync(full_path, guts);
           if (doc_info.zip) {
-            console.log('updating in zip', filename);
             zip.updateFile(filename, guts);
           }
         });
