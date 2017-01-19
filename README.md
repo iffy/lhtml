@@ -66,7 +66,7 @@ This is the saving function used by default (if none is provided by calling `reg
 
 For usage, see `registerSaver`'s usage.
 
-### `disableFormSaving`
+### `disableFormSaving()`
 
 A common use case for LHTML files is to email a form to be filled out.  By default data entered into forms will be saved.  If you want to disable this (because you're using a framework like React or Angular) call `disableFormSaving()`.
 
