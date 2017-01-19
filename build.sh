@@ -20,5 +20,5 @@ fi
 
 # windows
 if [ "$target" = "win" ] || [ "$target" = "all" ]; then
-    electron-packager . LHTML --platform=win --arch=all --version=1.2.5 --out=dist --overwrite
+    electron-packager . LHTML --platform=win32 --arch=all --version=1.2.5 --out=dist --overwrite
 fi
