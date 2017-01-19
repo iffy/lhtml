@@ -33,7 +33,7 @@ then zip it up.  On Linux/macOS do:
 zip myfirst.lhtml index.html
 ```
 
-Now you can open the file, save it, email it, copy it, etc...
+Now you can open the file, save it, email it, copy it, etc...  But this sample file isn't editable.  To make an editable file, see [`enableFormSaving`](#enableformsaving).
 
 ## Resources
 
