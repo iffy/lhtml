@@ -10,7 +10,7 @@ An LHTML file is a packaged web application with the ability to save itself.  Th
 [![LHTML Demo](https://img.youtube.com/vi/QiAbkCHHefo/0.jpg)](https://www.youtube.com/watch?v=QiAbkCHHefo)
 
 
-**The current application is considered Alpha-quality**
+**The current application is considered Alpha-quality.  Use at your own risk, and all that.**
 
 # Making LHTML files
 
@@ -138,6 +138,19 @@ This LHTML viewer is built with Electron, so I obviously think Electron is a goo
 
 But if you're making documents (or document-like things), you don't want to build and install an entirely new Electron app for each document.
 
+# How secure is this?
+
+Security of LHTML hasn't yet been fully vetted.  Some precautions have been taken, but we should do a full security audit before you open Internet-stranger's LHTML files.  Here's what we do:
+
+- All documents are loaded in a sandboxed [`<webview>` tag](http://electron.atom.io/docs/api/web-view-tag/)
+- Documents have no access to node stuff (if the sandbox of `<webview>` is working as designed)
+- Access to `file://` resources is forbidden to documents.
+- Access to `https?://` resources is forbidden to documents.
+- Documents shouldn't be able to open new windows (need to verify this for all cases), so they can't open fake system dialogs, hopefully.
+
+Insecurish things:
+
+- Currently, LHTML files are unzipped to a temporary directory, then zipped back up to overwrite the original.  If an attacker sneaked something into that temporary directory, it would end up back in the zipped LHTML.
 
 # Development
 
