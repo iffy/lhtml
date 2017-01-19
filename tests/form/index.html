@@ -1,0 +1,48 @@
+<!DOCTYPE html><html><head>
+  <title>Form Thing</title>
+</head>
+<body>
+  <div class="text">
+    Name: <input type="text" value="something here">
+  </div>
+  <div class="checkbox">
+    Awake? <input type="checkbox" checked="">
+  </div>
+  <div class="select">
+    Best color: <select>
+      <option>Red</option>
+      <option>Orange</option>
+      <option>Yellow</option>
+      <option selected="true">Green</option>
+      <option>Blue</option>
+    </select>
+  </div>
+  <div class="multi-select">
+    Worst color: <select multiple="">
+      <option selected="true">Red</option>
+      <option>Orange</option>
+      <option>Yellow</option>
+      <option>Green</option>
+      <option>Blue</option>
+    </select>
+  </div>
+  <div class="password">
+    Password: <input type="password" value="something">
+  </div>
+  <form>
+    A: <input type="radio" name="foo" value="a" checked="true">
+    B: <input type="radio" name="foo" value="b">
+  </form>
+
+  <form>
+    A: <input type="radio" name="foo" value="a" checked="true">
+    B: <input type="radio" name="foo" value="b">
+  </form>
+
+  <div>
+  A: <input type="radio" name="foo" value="a" checked="true">
+  B: <input type="radio" name="foo" value="b">
+  </div>
+
+  <script>LHTML && LHTML.enableFormSaving();</script>
+</body></html>

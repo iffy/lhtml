@@ -1,6 +1,6 @@
 General:
  ✔ Let there be multiple files open at once @done (17-01-18 16:26)
- ☐ Basic form-saving support
+ ✔ Basic form-saving support @done (17-01-19 09:49)
  ☐ Undo
  ☐ Redo
  ✔ Close @done (17-01-19 08:44)

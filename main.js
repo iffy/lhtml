@@ -44,6 +44,7 @@ let template = [{
     },
     {
       label: 'Open Directory...',
+      accelerator: 'CmdOrCtrl+Shift+O',
       click() {
         return openDirectory();
       }

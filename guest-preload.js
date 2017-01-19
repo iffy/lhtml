@@ -46,7 +46,6 @@ RPC.handlers = {
 //  The default SAVER will emit the current content of the html page.
 //
 LHTML.defaultSaver = () => {
-  console.log('defaultSaver');
   // Thanks http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript/10162353#10162353
   let doctype = '';
   let node = document.doctype;
@@ -85,6 +84,77 @@ LHTML.on = (event, handler) => {
     EVENT_HANDLERS[event] = [];
   }
   EVENT_HANDLERS[event].push(handler);
+}
+
+//
+//  Enable form-saving
+//
+let observer;
+
+function addMultiListener(node, events, listener) {
+  events.split(' ').forEach(event => {
+    node.addEventListener(event, listener, false);
+  })
+}
+function mirrorValueToAttribute(node) {
+  if (node.nodeName === 'INPUT') {
+    if (node.type === 'checkbox') {
+      addMultiListener(node, 'change', event => {
+        if (node.checked) {
+          node.setAttribute('checked', true);
+        } else {
+          node.removeAttribute('checked');
+        }
+      });
+    } else if (node.type === 'radio') {
+      addMultiListener(node, 'change', event => {
+        var all_radios = document.getElementsByName(node.name);
+        all_radios.forEach(radio => {
+          if (radio.type === 'radio' &&
+              radio.form === node.form &&
+              radio.hasAttribute('checked')) {
+            radio.removeAttribute('checked');
+          }
+        });
+        node.setAttribute('checked', true);
+      });
+    } else {
+      addMultiListener(node, 'change keyup blur click', event => {
+        node.setAttribute('value', node.value);
+      });  
+    }
+  } else if (node.nodeName === 'SELECT') {
+    addMultiListener(node, 'change', event => {
+      node.querySelectorAll('option').forEach(option => {
+        if (option.selected) {
+          option.setAttribute('selected', 'true');
+        } else {
+          option.removeAttribute('selected');
+        }
+      })
+    });
+  }
+}
+
+LHTML.enableFormSaving = () => {
+  observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach(node => {
+          mirrorValueToAttribute(node);
+        })
+      }
+    })
+  });
+  // Catch all existing elements
+  _.each(document.getElementsByTagName('input'),
+    mirrorValueToAttribute);
+  _.each(document.getElementsByTagName('select'),
+    mirrorValueToAttribute);
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
 }
 
 
