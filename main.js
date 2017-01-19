@@ -11,34 +11,66 @@ const rimraf = require('rimraf');
 let template = [{
   label: 'File',
   submenu: [
-  {
-    label: 'Open...',
-    accelerator: 'CmdOrCtrl+O',
-    click() {
-      return openFile();
+    {
+      label: 'Open...',
+      accelerator: 'CmdOrCtrl+O',
+      click() {
+        return openFile();
+      },
     },
-  },
-  {
-    label: 'Reload',
-    accelerator: 'CmdOrCtrl+R',
-    click() {
-      return reloadFile();
+    {
+      label: 'Reload',
+      accelerator: 'CmdOrCtrl+R',
+      click() {
+        return reloadFile();
+      },
     },
-  },
-  {
-    label: 'Save',
-    accelerator: 'CmdOrCtrl+S',
-    click() {
-      return saveDocument();
+    {
+      label: 'Save',
+      accelerator: 'CmdOrCtrl+S',
+      click() {
+        return saveDocument();
+      }
+    },
+    {
+      label: 'Close',
+      accelerator: 'CmdOrCtrl+W',
+      click() {
+        return closeDocument();
+      }
+    },
+  ]
+},
+{
+  label: 'Edit',
+  submenu: [
+    {
+      role: 'undo'
+    },
+    {
+      role: 'redo'
+    },
+    {
+      type: 'separator'
+    },
+    {
+      role: 'cut'
+    },
+    {
+      role: 'copy'
+    },
+    {
+      role: 'paste'
+    },
+    {
+      role: 'pasteandmatchstyle'
+    },
+    {
+      role: 'delete'
+    },
+    {
+      role: 'selectall'
     }
-  },
-  {
-    label: 'Close',
-    accelerator: 'CmdOrCtrl+W',
-    click() {
-      return closeDocument();
-    }
-  }
   ]
 },
 {
