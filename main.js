@@ -31,6 +31,13 @@ let template = [{
     click() {
       return saveDocument();
     }
+  },
+  {
+    label: 'Close',
+    accelerator: 'CmdOrCtrl+W',
+    click() {
+      return closeDocument();
+    }
   }
   ]
 },
@@ -145,7 +152,7 @@ function safe_join(base, part) {
   if (path.indexOf(base) === 0) {
     return path;
   } else {
-    throw 'a fit';
+    throw new Error('a fit');
   }
 }
 
@@ -166,9 +173,23 @@ app.on('ready', function() {
     callback({path: file_path});
   }, (error) => {
     if (error) {
-      console.error('Failed to register protocol');
+      throw new Error('failed to register lhtml protocol');
     }
   })
+
+  // Disable http:// requests until we can figure out a secure
+  // way to do it.
+  console.log('attempting to intercept http');
+  protocol.interceptHttpProtocol('http', (request, callback) => {
+    console.log('http request:');
+    console.log(request);
+    callback(null);
+  }, (error) => {
+    if (error) {
+      throw new Error('failed to register http protocol');
+    }
+  });
+  console.log('creating default window');
 
   // The default window
   createDefaultWindow();
@@ -228,7 +249,7 @@ function openFile() {
         doc_info.zip = zip;
       } else {
         // unknown file type
-        throw 'unknown file type';
+        throw new Error('unknown file type');
       }
     } else {
       doc_info.dir = filePath;
@@ -269,6 +290,13 @@ function saveDocument() {
         }
         RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
       })
+  }
+}
+
+function closeDocument() {
+  let current = currentDocument();
+  if (current) {
+    current.close();
   }
 }
 
