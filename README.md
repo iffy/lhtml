@@ -23,7 +23,7 @@ To create an LHTML file, create an `index.html` file:
     <title>My LHTML file</title>
 </head>
 <body>
-    Hello
+    Name: <input type="text">
 </body>
 </html>
 ```
@@ -34,7 +34,7 @@ then zip it up.  On Linux/macOS do:
 zip myfirst.lhtml index.html
 ```
 
-Now you can open the file, save it, email it, copy it, etc...  But this sample file isn't editable.  To make an editable file, see [`enableFormSaving`](#enableformsaving).
+Now you can open the file, type in the inputs, save it, email it, copy it, etc...
 
 ## Resources
 
@@ -66,17 +66,16 @@ This is the saving function used by default (if none is provided by calling `reg
 
 For usage, see `registerSaver`'s usage.
 
-### `enableFormSaving()`
+### `disableFormSaving`
 
-A common use case for LHTML files is to email a form to be filled out.  If you don't want to use a fancy framework (like React or Angular) you can call this function to enable basic HTML form saving.
-
-On documents where this is called, inputs will retain their values when saved.
+A common use case for LHTML files is to email a form to be filled out.  By default data entered into forms will be saved.  If you want to disable this (because you're using a framework like React or Angular) call `disableFormSaving()`.
 
 Usage:
 
 ```html
 <body>
-    <script>window.LHTML && LHTML.enableFormSaving()</script>
+    <!-- disable form saving -->
+    <script>window.LHTML && LHTML.disableFormSaving();</script>
     Name: <input name="name">
     Email: <input type="email" name="email">
     Favorite color: <select>

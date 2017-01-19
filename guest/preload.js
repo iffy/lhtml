@@ -5,8 +5,9 @@
 // This script is executed right when an LHTML file is loaded.
 //
 const {ipcRenderer} = require('electron');
-const {RPCService} = require('./rpc.js');
+const {RPCService} = require('../rpc.js');
 const _ = require('lodash');
+const formsaving = require('./formsaving.js');
 
 let LHTML = {};
 
@@ -97,82 +98,18 @@ LHTML.on = (event, handler) => {
 }
 
 //
-//  Enable form-saving
+// form-saving default
 //
-let observer;
-
-function addMultiListener(node, events, listener) {
-  events.split(' ').forEach(event => {
-    node.addEventListener(event, listener, false);
-  })
+let form_saving_enabled = true;
+LHTML.disableFormSaving = () => {
+  form_saving_enabled = false;
+  formsaving.disable();
 }
-function mirrorValueToAttribute(node) {
-  if (node.nodeName === 'INPUT') {
-    if (node.type === 'checkbox') {
-      addMultiListener(node, 'change', event => {
-        if (node.checked) {
-          node.setAttribute('checked', true);
-        } else {
-          node.removeAttribute('checked');
-        }
-      });
-    } else if (node.type === 'radio') {
-      addMultiListener(node, 'change', event => {
-        var all_radios = document.getElementsByName(node.name);
-        all_radios.forEach(radio => {
-          if (radio.type === 'radio' &&
-              radio.form === node.form &&
-              radio.hasAttribute('checked')) {
-            radio.removeAttribute('checked');
-          }
-        });
-        node.setAttribute('checked', true);
-      });
-    } else {
-      addMultiListener(node, 'change keyup blur click', event => {
-        node.setAttribute('value', node.value);
-      });  
-    }
-  } else if (node.nodeName === 'SELECT') {
-    addMultiListener(node, 'change', event => {
-      node.querySelectorAll('option').forEach(option => {
-        if (option.selected) {
-          option.setAttribute('selected', 'true');
-        } else {
-          option.removeAttribute('selected');
-        }
-      })
-    });
+window.addEventListener('load', ev => {
+  if (form_saving_enabled) {
+    formsaving.enable();
   }
-}
-
-LHTML.enableFormSaving = () => {
-  observer = new MutationObserver(mutations => {
-    mutations.forEach(mutation => {
-      if (mutation.type === 'childList') {
-        mutation.addedNodes.forEach(node => {
-          mirrorValueToAttribute(node);
-        })
-      }
-    })
-  });
-  // Catch all existing elements
-  _.each(document.getElementsByTagName('input'),
-    mirrorValueToAttribute);
-  _.each(document.getElementsByTagName('select'),
-    mirrorValueToAttribute);
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-}
-
-
-RPC.call('echo', 'Some message')
-  .then((response) => {
-    console.log('echo response:', response);
-  });
-
+});
 
 window.LHTML = LHTML;
 console.log('LHTML finished loading');

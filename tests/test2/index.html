@@ -4,15 +4,17 @@
 <body>
 Test page.
 <script>
-document.write('\nwoooooo');
+window.LHTML && LHTML.disableFormSaving();
 if (LHTML) {
   console.log('LHTML exists');
   LHTML.on('saved', (data) => {
     console.log('saved', data);
   })
 }
+console.log('script done');
 </script>
 woooooo
 woooooo
+<input type="text" value="hello guys">
 <div>No ducks here</div>
 </body></html>
