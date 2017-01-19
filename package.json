@@ -1,17 +1,63 @@
 {
   "name": "lhtml",
-  "productName": "LHTML",
+  "productName": "lhtml",
   "version": "0.1.0",
-  "main": "main.js",
-  "devDependencies": {
-    "electron-packager": "^8.5.0",
-    "electron-prebuilt": "^1.4.13",
-    "http-server": "^0.9.0"
+  "description": "LHTML Viewer",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "lint": "eslint src"
+  },
+  "keywords": [],
+  "author": "matt",
+  "license": "Apache 2.0",
+  "config": {
+    "forge": {
+      "make_targets": {
+        "win32": [
+          "squirrel"
+        ],
+        "darwin": [
+          "dmg"
+        ],
+        "linux": [
+          "deb",
+          "rpm"
+        ]
+      },
+      "electronPackagerConfig": {},
+      "electronWinstallerConfig": {
+        "name": "lhtml"
+      },
+      "electronInstallerDebian": {},
+      "electronInstallerRedhat": {},
+      "github_repository": {
+        "owner": "iffy"
+      },
+      "windowsStoreConfig": {
+        "packageName": "LHTML",
+        "name": "lhtml"
+      }
+    }
   },
   "dependencies": {
     "adm-zip": "^0.4.7",
     "lodash": "^4.17.4",
     "rimraf": "^2.5.4",
-    "tmp": "0.0.31"
+    "tmp": "0.0.31",
+    "electron-compile": "^5.1.3"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-async-to-generator": "^6.16.0",
+    "babel-preset-env": "^1.1.8",
+    "babel-preset-react": "^6.16.0",
+    "electron-prebuilt-compile": "1.4.15",
+    "eslint": "^3.13.1",
+    "eslint-config-airbnb": "^14.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^3.0.2",
+    "eslint-plugin-react": "^6.9.0"
   }
 }
