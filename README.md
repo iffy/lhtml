@@ -7,7 +7,7 @@ See LICENSE for details.
 
 An LHTML file is a packaged web application with the ability to save itself.  Think PDFs but with web technologies.  For a demo, watch this video:
 
-XXX
+<iframe width="560" height="315" src="https://www.youtube.com/embed/A1Z8qCGzobI" frameborder="0" allowfullscreen></iframe>
 
 **The current application is considered Alpha-quality**
 
