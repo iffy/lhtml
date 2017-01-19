@@ -55,7 +55,7 @@ LHTML files are not allowed to access resources over the network.  This is inten
 
 ## API
 
-LHTML viewers provide a small JavaScript API to `index.html` files described here:
+LHTML viewers provide a small JavaScript API to `index.html` files within the `LHTML` object.  Available endpoints are described here:
 
 ### `defaultSaver`
 
@@ -91,8 +91,8 @@ Listen for one of these events:
 
 Usage:
 
-```html
-LHTML.on('saved', function() {
+```javascript
+window.LHTML && LHTML.on('saved', function() {
     console.log('The file was saved!');
 })
 ```
@@ -107,7 +107,7 @@ Usage:
 <script>
 // Register a saver that will save index.html in its current state
 // and write some data to somedata.json within the LHTML zip.
-LHTML.registerSaver(function() {
+window.LHTML && LHTML.registerSaver(function() {
     var files = LHTML.defaultSaver();
     files['somedata.json'] = '{"foo": "bar"}';
     return files;
@@ -123,7 +123,7 @@ Usage:
 
 ```html
 <script>
-LHTML.save().then(function() {
+window.LHTML && LHTML.save().then(function() {
     console.log('saved');
 })
 </script>
