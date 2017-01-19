@@ -1,3 +1,6 @@
+// Copyright (c) The LHTML team
+// See LICENSE for details.
+
 const {electron, ipcMain, dialog, app, BrowserWindow, Menu, protocol} = require('electron');
 const Path = require('path');
 const fs = require('fs');

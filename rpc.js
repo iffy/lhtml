@@ -1,3 +1,6 @@
+// Copyright (c) The LHTML team
+// See LICENSE for details.
+
 class RPCService {
   constructor(listener, options) {
     options = options || {};

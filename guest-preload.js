@@ -1,3 +1,6 @@
+// Copyright (c) The LHTML team
+// See LICENSE for details.
+
 //
 // This script is executed right when an LHTML file is loaded.
 //
