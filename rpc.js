@@ -73,8 +73,10 @@ class RPCService {
     var handler = this._pending[response.id];
     delete this._pending[response.id];
     if (response.error) {
+      console.log('reject');
       handler.reject(response.error);
     } else {
+      console.log('resolve');
       handler.resolve(response.result);
     }
   }

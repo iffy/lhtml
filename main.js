@@ -319,10 +319,10 @@ function _openPath(path) {
       // zipped directory.
       doc_info.tmpdir = Tmp.dirSync();
       doc_info.dir = doc_info.tmpdir.name;
+      doc_info.zip = path;
       let zip = new AdmZip(path);
       console.log('extracting to', doc_info.dir);
       zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
-      doc_info.zip = zip;
     } else {
       // unknown file type
       throw new Error('unknown file type');
@@ -349,20 +349,26 @@ function saveDocument() {
     var guest = current.webContents;
     return RPC.call('get_save_data', null, guest)
       .then((save_data) => {
+        console.log('received save data');
         let doc_info = WINDOW2DOC_INFO[current.id];
+        console.log('doc_info', doc_info);
         _.each(save_data, (guts, filename) => {
           var full_path = safe_join(doc_info.dir, filename);
+          console.log('fs.writeFileSync', full_path);
           fs.writeFileSync(full_path, guts);
-          if (doc_info.zip) {
-            zip.updateFile(filename, guts);
-          }
         });
 
         // Overwrite original zip, if it's a zip
         if (doc_info.zip) {
           console.log('writing zip');
-          doc_info.zip.writeZip();
+          var zip = new AdmZip();
+          zip.addLocalFolder(doc_info.dir, '.');
+          zip.writeZip(doc_info.zip);
+          console.log('wrote zip');
+        } else {
+          console.log('not a zip');
         }
+        console.log('saved');
         RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
         return null;
       });
