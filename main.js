@@ -39,6 +39,15 @@ let template = [{
         return closeDocument();
       }
     },
+    {
+      type: 'separator'
+    },
+    {
+      label: 'Open Directory...',
+      click() {
+        return openDirectory();
+      }
+    }
   ]
 },
 {
@@ -260,39 +269,54 @@ function openFile() {
     if (!filePaths) {
       return;
     }
-    // Open a new window
-    let win = createLHTMLWindow();
+    _openPath(filePaths[0]);
+  });
+}
 
-    var filePath = filePaths[0];
-    var dirPath;
-    let ident = randomIdentifier();
-    let doc_info = {
-      id: ident,
-      window_id: win.id,
-    };
-    if (fs.lstatSync(filePath).isFile()) {
-      if (filePath.endsWith('.lhtml')) {
-        // zipped directory.
-        doc_info.tmpdir = Tmp.dirSync();
-        doc_info.dir = doc_info.tmpdir.name;
-        let zip = new AdmZip(filePath);
-        console.log('extracting to', doc_info.dir);
-        zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
-        doc_info.zip = zip;
-      } else {
-        // unknown file type
-        throw new Error('unknown file type');
-      }
-    } else {
-      doc_info.dir = filePath;
+function openDirectory() {
+  dialog.showOpenDialog({
+    title: 'Open Directory...',
+    properties: ['openDirectory'],
+  }, (filePaths) => {
+    if (!filePaths) {
+      return;
     }
+    _openPath(filePaths[0]);
+  });
+}
 
-    WINDOW2DOC_INFO[win.id] = OPENDOCUMENTS[ident] = doc_info;
-    var url = `lhtml://${ident}/index.html`;
-    win.webContents.on('did-finish-load', (event) => {
-      console.log('sending load-file');
-      win.webContents.send('load-file', url);
-    });
+function _openPath(path) {
+  // Open a new window
+  let win = createLHTMLWindow();
+
+  var dirPath;
+  let ident = randomIdentifier();
+  let doc_info = {
+    id: ident,
+    window_id: win.id,
+  };
+  if (fs.lstatSync(path).isFile()) {
+    if (path.endsWith('.lhtml')) {
+      // zipped directory.
+      doc_info.tmpdir = Tmp.dirSync();
+      doc_info.dir = doc_info.tmpdir.name;
+      let zip = new AdmZip(path);
+      console.log('extracting to', doc_info.dir);
+      zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
+      doc_info.zip = zip;
+    } else {
+      // unknown file type
+      throw new Error('unknown file type');
+    }
+  } else {
+    doc_info.dir = path;
+  }
+
+  WINDOW2DOC_INFO[win.id] = OPENDOCUMENTS[ident] = doc_info;
+  var url = `lhtml://${ident}/index.html`;
+  win.webContents.on('did-finish-load', (event) => {
+    console.log('sending load-file');
+    win.webContents.send('load-file', url);
   });
 }
 
