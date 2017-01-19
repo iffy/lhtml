@@ -145,4 +145,6 @@ To run the application in development mode do:
 To package the application, do:
 
     npm install
-    ./build.sh
+    ./build.sh mac
+    ./build.sh linux
+
