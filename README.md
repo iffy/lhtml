@@ -9,6 +9,8 @@ An LHTML file is a packaged web application with the ability to save itself.  Th
 
 XXX
 
+**The current application is considered Alpha-quality**
+
 # Making LHTML files
 
 To create an LHTML file, create an `index.html` file:
