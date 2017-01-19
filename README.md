@@ -132,6 +132,12 @@ window.LHTML && LHTML.save().then(function() {
 ```
 
 
+# Why not just use Electron?
+
+This LHTML viewer is built with Electron, so I obviously think Electron is a good choice for making apps.  And it may make more sense for you to use Electron if you need full filesystem access, network access or any of the other features Electron provides.
+
+But if you're making documents (or document-like things), you don't want to build and install an entirely new Electron app for each document.
+
 
 # Development
 
