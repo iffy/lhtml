@@ -128,10 +128,14 @@ LHTML.save().then(function() {
 
 # Development
 
+To run the application in development mode do:
+
     npm install
     node_modules/.bin/electron .
 
 # Packaging
+
+To package the application, do:
 
     npm install
     ./build.sh
