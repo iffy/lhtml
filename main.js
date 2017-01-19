@@ -329,7 +329,7 @@ function saveDocument() {
   let current = currentDocument();
   if (current) {
     var guest = current.webContents;
-    RPC.call('get_save_data', null, guest)
+    return RPC.call('get_save_data', null, guest)
       .then((save_data) => {
         let doc_info = WINDOW2DOC_INFO[current.id];
         _.each(save_data, (guts, filename) => {
@@ -346,7 +346,8 @@ function saveDocument() {
           doc_info.zip.writeZip();
         }
         RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
-      })
+        return null;
+      });
   }
 }
 
@@ -376,4 +377,10 @@ RPC.handlers = {
   echo: (data, cb, eb) => {
     cb('echo: ' + data);
   },
+  save: (data, cb, eb) => {
+    Promise.resolve(saveDocument())
+      .then(response => {
+        cb(response);
+      })
+  }
 };

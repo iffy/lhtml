@@ -74,6 +74,13 @@ LHTML.registerSaver = (func) => {
 }
 
 //
+//  Save the current file.
+//
+LHTML.save = () => {
+  return RPC.call('save');
+}
+
+//
 //  Register something to handle events.
 //
 //  Some events:

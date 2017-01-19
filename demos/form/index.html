@@ -1,0 +1,82 @@
+<!DOCTYPE html><html><head>
+  <title>Job Application</title>
+  <!--Import materialize.css-->
+  <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection">
+</head>
+<body>
+  <script>window.LHTML && LHTML.enableFormSaving();</script>
+  <script>
+  function save() {
+    if (window.LHTML) {
+      LHTML.save()
+        .then(function() {
+          Materialize.toast('Document saved', 4000);
+        })
+    } else {
+      Materialize.toast('Would have saved', 4000);
+    }
+  }
+  </script>
+  <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+  <script type="text/javascript" src="js/materialize.min.js"></script>
+  <div class="container">
+    
+    <div class="section">
+      
+      <h5>Contact Information</h5>
+      <div class="row">
+        <div class="input-field col s4">
+          <input id="first_name" type="text" class="validate valid" value="John">
+          <label for="first_name" class="active">First Name</label>
+        </div>
+        <div class="input-field col s4">
+          <input id="mid_name" type="text" class="validate valid" value="Johnny">
+          <label for="mid_name" class="active">Middle Name</label>
+        </div>
+        <div class="input-field col s4">
+          <input id="last_name" type="text" class="validate valid" value="Johnson">
+          <label for="last_name" class="active">Last Name</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-field col s6">
+          <input id="phone_number" type="tel" class="validate valid" value="901-555-1234">
+          <label for="phone_number" class="active">Phone number</label>
+        </div>
+        <div class="input-field col s6">
+          <input id="email" type="email" class="validate valid" value="foo@foo.com">
+          <label for="email" class="active">Email address</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-field col s12">
+          <input id="address" type="text" class="validate valid" value="1234 S. Sunnyvale Road">
+          <label for="address" class="active">Street address</label>
+        </div>
+        <div class="input-field col s4">
+          <input id="city" type="text" class="validate valid" value="San Diego">
+          <label for="city" class="active">City</label>
+        </div>
+        <div class="input-field col s4">
+          <select id="foo" class="browser-default">
+            <option value="" disabled="">State</option>
+            <option value="1">Alaska</option>
+            <option value="2" selected="true">California</option>
+            <option value="3">Missouri</option>
+          </select>
+        </div>
+        <div class="input-field col s4">
+          <input id="zipcode" type="text" pattern="\d{5}" class="validate valid" value="90210">
+          <label for="zipcode" class="active">Zipcode</label>
+        </div>
+      </div>
+
+      <a class="waves-effect waves-light btn" onclick="save()">Save<div class="waves-ripple " data-hold="1484846284872" data-scale="scale(9.200000000000001)" data-x="43" data-y="12.359375" style="top:12.359375px;left:43px;-webkit-transform:scale(9.200000000000001);-moz-transform:scale(9.200000000000001);-ms-transform:scale(9.200000000000001);-o-transform:scale(9.200000000000001);transform:scale(9.200000000000001);opacity:1;-webkit-transition-duration:750ms;-moz-transition-duration:750ms;-o-transition-duration:750ms;transition-duration:750ms;-webkit-transition-timing-function:cubic-bezier(0.250, 0.460, 0.450, 0.940);-moz-transition-timing-function:cubic-bezier(0.250, 0.460, 0.450, 0.940);-o-transition-timing-function:cubic-bezier(0.250, 0.460, 0.450, 0.940);transition-timing-function:cubic-bezier(0.250, 0.460, 0.450, 0.940);"></div><div class="waves-ripple " data-hold="1484846294574" data-scale="scale(9.200000000000001)" data-x="32" data-y="21.359375" style="top:21.359375px;left:32px;-webkit-transform:scale(9.200000000000001);-moz-transform:scale(9.200000000000001);-ms-transform:scale(9.200000000000001);-o-transform:scale(9.200000000000001);transform:scale(9.200000000000001);opacity:1;-webkit-transition-duration:750ms;-moz-transition-duration:750ms;-o-transition-duration:750ms;transition-duration:750ms;-webkit-transition-timing-function:cubic-bezier(0.250, 0.460, 0.450, 0.940);-moz-transition-timing-function:cubic-bezier(0.250, 0.460, 0.450, 0.940);-o-transition-timing-function:cubic-bezier(0.250, 0.460, 0.450, 0.940);transition-timing-function:cubic-bezier(0.250, 0.460, 0.450, 0.940);"></div></a>
+
+    </div>
+
+  </div>
+
+<div class="hiddendiv common"></div><div id="toast-container"></div></body></html>
