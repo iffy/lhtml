@@ -203,6 +203,16 @@ let WINDOW2DOC_INFO = {};
 
 protocol.registerStandardSchemes(['lhtml'])
 
+let openfirst;
+app.on('open-file', function(event, path) {
+  if (app.isReady()) {
+    _openPath(path);
+  } else {
+    openfirst = path;
+  }
+  event.preventDefault();
+})
+
 app.on('ready', function() {
   // Handle lhtml://<path>
   protocol.registerFileProtocol('lhtml', (request, callback) => {
@@ -233,12 +243,17 @@ app.on('ready', function() {
   });
   console.log('creating default window');
 
-  // The default window
-  createDefaultWindow();
-
   // Menu
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+
+  if (openfirst) {
+    _openPath(openfirst);
+    openfirst = null;
+  } else {
+    // The default window
+    createDefaultWindow();
+  }
 });
 
 // Quit when all windows are closed.
