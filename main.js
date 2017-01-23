@@ -235,13 +235,19 @@ app.on('ready', function() {
   // Disable http:// requests until we can figure out a secure
   // way to do it.
   console.log('attempting to intercept http');
-  protocol.interceptHttpProtocol('http', (request, callback) => {
+  let dropRequest = (request, callback) => {
     console.log('http request:');
     console.log(request);
     callback(null);
-  }, (error) => {
+  };
+  protocol.interceptHttpProtocol('http', dropRequest, (error) => {
     if (error) {
       throw new Error('failed to register http protocol');
+    }
+  });
+  protocol.interceptHttpProtocol('https', dropRequest, (error) => {
+    if (error) {
+      throw new Error('failed to register https protocol');
     }
   });
   console.log('creating default window');
