@@ -5,9 +5,40 @@ Copyright (c) The LHTML team
 See LICENSE for details.
 -->
 <head>
-  <title>LHTML</title>
+  <title>LHTML Viewer</title>
+  <style type="text/css">
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: lightgrey;
+    -ms-overflow-style: scrollbar;
+    -webkit-app-region:drag;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  .outer {
+    padding: 25px;
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+  }
+  .inner {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    color: grey;
+    font-size: 24pt;
+    font-family: Arial;
+  }
+  </style>
 </head>
 <body>
-  Default
+  <div class="outer">
+    <div class="inner">
+      <div>LHTML Viewer</div>
+    </div>
+  </div>
 </body>
 </html>
