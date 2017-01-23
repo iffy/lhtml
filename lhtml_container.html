@@ -26,10 +26,12 @@ onload = () => {
   }
   const loadstop = () => {
     console.log('load stop');
-    document.title = webview.getTitle();
   }
   webview.addEventListener('did-start-loading', loadstart);
   webview.addEventListener('did-stop-loading', loadstop);
+  webview.addEventListener('page-title-updated', (title, explicitSet) => {
+    document.title = webview.getTitle();
+  })
 
   // Handle main -> guest communication
   ipcRenderer.on('rpc', (event, message) => {

@@ -6,7 +6,7 @@ General:
  ✔ Close @done (17-01-19 08:44)
  ☐ guest request a window size
  ☐ Double-click in finder opens in LHTML viewer
- ☐ Title updates whenever guest title updates
+ ✔ Title updates whenever guest title updates @done (17-01-23 13:25)
  ✔ Show that no file is open when no file is open @done (17-01-18 16:27)
  ☐ Grey out "Save/Save as" when nothing is open
  ☐ Automatic updates

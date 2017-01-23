@@ -150,7 +150,11 @@ if (process.platform === 'darwin') {
 let default_window = null;
 
 function createDefaultWindow() {
-  default_window = new BrowserWindow({titleBarStyle: 'hidden', width: 400, height: 400});
+  default_window = new BrowserWindow({
+    titleBarStyle: 'hidden',
+    width: 400,
+    height: 300,
+  });
   default_window.on('closed', () => {
     default_window = null;
   });
