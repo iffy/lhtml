@@ -160,7 +160,11 @@ function createDefaultWindow() {
     titleBarStyle: 'hidden',
     width: 400,
     height: 300,
+    show: false,
   });
+  default_window.on('ready-to-show', () => {
+    default_window.show();
+  })
   default_window.on('closed', () => {
     default_window = null;
   });
@@ -169,7 +173,14 @@ function createDefaultWindow() {
 }
 
 function createLHTMLWindow() {
-  let win = new BrowserWindow({width: 800, height: 600});
+  let win = new BrowserWindow({
+    width: 800,
+    height: 600,
+    show: false,
+  });
+  win.on('ready-to-show', () => {
+    win.show();
+  })
   win.loadURL(`file://${__dirname}/lhtml_container.html`);
   var win_id = win.id;
   win.on('closed', () => {
