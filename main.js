@@ -3,13 +3,12 @@
 
 const {electron, ipcMain, dialog, app, BrowserWindow, Menu, protocol} = require('electron');
 const Path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const URL = require('url');
 const {RPCService} = require('./rpc.js');
 const _ = require('lodash');
 const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
-const rimraf = require('rimraf');
 
 let template = [{
   label: 'File',
@@ -25,21 +24,28 @@ let template = [{
       label: 'Reload',
       accelerator: 'CmdOrCtrl+R',
       click() {
-        return reloadFile();
+        return reloadFocusedDoc();
       },
     },
     {
       label: 'Save',
       accelerator: 'CmdOrCtrl+S',
       click() {
-        return saveDocument();
+        return saveFocusedDoc();
       }
+    },
+    {
+      label: 'Save As...',
+      accelerator: 'CmdOrCtrl+Shift+S',
+      click() {
+        return saveAsFocusedDoc();
+      },
     },
     {
       label: 'Close',
       accelerator: 'CmdOrCtrl+W',
       click() {
-        return closeDocument();
+        return closeFocusedDoc();
       }
     },
     {
@@ -169,7 +175,7 @@ function createLHTMLWindow() {
   win.on('closed', () => {
     let doc_info = WINDOW2DOC_INFO[win_id];
     if (doc_info.tmpdir) {
-      rimraf(doc_info.dir, (error) => {
+      fs.remove(doc_info.dir, (error) => {
         if (error) {
           console.error('Error deleting tmpdir:', error);
         }
@@ -314,6 +320,17 @@ function openDirectory() {
   });
 }
 
+function _unzip(path) {
+  let doc_info = {};
+  doc_info.tmpdir = Tmp.dirSync();
+  doc_info.dir = doc_info.tmpdir.name;
+  doc_info.zip = path;
+  let zip = new AdmZip(path);
+  console.log('extracting to', doc_info.dir);
+  zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
+  return doc_info;
+}
+
 function _openPath(path) {
   // Open a new window
   let win = createLHTMLWindow();
@@ -327,17 +344,13 @@ function _openPath(path) {
   if (fs.lstatSync(path).isFile()) {
     if (path.endsWith('.lhtml')) {
       // zipped directory.
-      doc_info.tmpdir = Tmp.dirSync();
-      doc_info.dir = doc_info.tmpdir.name;
-      doc_info.zip = path;
-      let zip = new AdmZip(path);
-      console.log('extracting to', doc_info.dir);
-      zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
+      _.merge(doc_info, _unzip(path));
     } else {
       // unknown file type
       throw new Error('unknown file type');
     }
   } else {
+    // Open expanded directory
     doc_info.dir = path;
   }
 
@@ -349,43 +362,95 @@ function _openPath(path) {
   });
 }
 
-function reloadFile() {
+function reloadFocusedDoc() {
   BrowserWindow.getFocusedWindow().webContents.send('reload-file');
 }
 
-function saveDocument() {
+function saveFocusedDoc() {
   let current = currentDocument();
   if (current) {
-    var guest = current.webContents;
-    return RPC.call('get_save_data', null, guest)
-      .then((save_data) => {
-        console.log('received save data');
-        let doc_info = WINDOW2DOC_INFO[current.id];
-        console.log('doc_info', doc_info);
-        _.each(save_data, (guts, filename) => {
-          var full_path = safe_join(doc_info.dir, filename);
-          console.log('fs.writeFileSync', full_path);
-          fs.writeFileSync(full_path, guts);
-        });
-
-        // Overwrite original zip, if it's a zip
-        if (doc_info.zip) {
-          console.log('writing zip');
-          var zip = new AdmZip();
-          zip.addLocalFolder(doc_info.dir, '.');
-          zip.writeZip(doc_info.zip);
-          console.log('wrote zip');
-        } else {
-          console.log('not a zip');
-        }
-        console.log('saved');
-        RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
-        return null;
-      });
+    _saveDoc(current);
   }
 }
 
-function closeDocument() {
+function _saveDoc(win) {
+  var guest = win.webContents;
+  console.log('gonna get_save_data');
+  return RPC.call('get_save_data', null, guest)
+    .then((save_data) => {
+      console.log('received save data');
+      let doc_info = WINDOW2DOC_INFO[win.id];
+      console.log('doc_info', doc_info);
+      _.each(save_data, (guts, filename) => {
+        var full_path = safe_join(doc_info.dir, filename);
+        console.log('fs.writeFileSync', full_path);
+        fs.writeFileSync(full_path, guts);
+      });
+
+      // Overwrite original zip, if it's a zip
+      if (doc_info.zip) {
+        console.log('writing zip');
+        var zip = new AdmZip();
+        zip.addLocalFolder(doc_info.dir, '.');
+        zip.writeZip(doc_info.zip);
+        console.log('wrote zip');
+      } else {
+        console.log('not a zip');
+      }
+      console.log('saved');
+      RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
+      return null;
+    });
+}
+
+function saveAsFocusedDoc() {
+  let current = currentDocument();
+  if (!current) {
+    return;
+  }
+  let doc_info = WINDOW2DOC_INFO[current.id];
+  console.log('doc_info', doc_info);
+  let defaultPath = Path.dirname(doc_info.dir);
+  if (doc_info.zip) {
+    defaultPath = Path.dirname(doc_info.zip);
+  }
+  dialog.showSaveDialog({
+    defaultPath: defaultPath,
+    filters: [
+      {name: 'LHTML', extensions: ['lhtml']},
+      {name: 'All Files', extensions: ['*']},
+    ],
+  }, dst => {
+    console.log('save as', dst);
+    // Copy first
+    if (doc_info.zip) {
+      // Copying from zip to zip
+      fs.copy(doc_info.zip, dst);
+      doc_info.zip = dst;
+    } else {
+      // Copying from dir to zip
+      var zip = new AdmZip();
+      zip.addLocalFolder(doc_info.dir, '.');
+      zip.writeZip(dst);
+      if (doc_info.tmpdir) {
+        console.log('delete', doc_info.tmpdir);
+        fs.remove(doc_info.dir, (error) => {
+          if (error) {
+            console.error('Error deleting tmpdir:', error);
+          }
+        });
+      }
+      console.log("old doc_info", doc_info);
+      _.merge(doc_info, _unzip(dst));
+      console.log("new doc_info", doc_info);
+    }
+    // Then save any outstanding changes
+    console.log('saveDoc');
+    _saveDoc(current);
+  })
+}
+
+function closeFocusedDoc() {
   let current = currentDocument();
   if (current) {
     current.close();
@@ -412,7 +477,7 @@ RPC.handlers = {
     cb('echo: ' + data);
   },
   save: (data, cb, eb) => {
-    Promise.resolve(saveDocument())
+    Promise.resolve(saveFocusedDoc())
       .then(response => {
         cb(response);
       })
