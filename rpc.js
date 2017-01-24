@@ -10,6 +10,7 @@ class RPCService {
     this.DEFAULT_RESPONSE_RECEIVER = options.default_receiver || null;
     this._message_id = 0;
     this._pending = {};
+    this._sender_id = options.sender_id || null;
   }
   call(method, params, target) {
     target = target || this.DEFAULT_RPC_TARGET;
@@ -22,6 +23,9 @@ class RPCService {
       params: params,
       id: message_id,
     };
+    if (this._sender_id) {
+      message.sender_id = this._sender_id;
+    }
     console.log(`RPC[${message_id}] call:`, method, params);
     return new Promise((resolve, reject) => {
       this._pending[message_id] = {
@@ -65,7 +69,8 @@ class RPCService {
             id: message.id,
             error: error,
           })
-        });
+        },
+        message.sender_id);
     }
   }
   response_received(event, response) {

@@ -19,6 +19,7 @@ let LHTML = {};
 var RPC = new RPCService(ipcRenderer, {
   default_target: ipcRenderer,
   default_receiver: ipcRenderer,
+  sender_id: window.location.hostname,
 });
 RPC.listen();
 RPC.handlers = {
@@ -84,6 +85,10 @@ LHTML.save = () => {
   return RPC.call('save');
 }
 
+LHTML.setDocumentEdited = (edited) => {
+  return RPC.call('set_document_edited', !!edited);
+}
+
 //
 //  Register something to handle events.
 //
@@ -108,8 +113,11 @@ LHTML.disableFormSaving = () => {
 window.addEventListener('load', ev => {
   if (form_saving_enabled) {
     formsaving.enable();
+    formsaving.onChange((element, value) => {
+      LHTML.setDocumentEdited(true);
+    })
   }
 });
 
 window.LHTML = LHTML;
-console.log('LHTML finished loading');
+console.log('LHTML: finished loading');

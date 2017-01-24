@@ -160,7 +160,11 @@ function createDefaultWindow() {
     titleBarStyle: 'hidden',
     width: 400,
     height: 300,
+    show: false,
   });
+  default_window.on('ready-to-show', () => {
+    default_window.show();
+  })
   default_window.on('closed', () => {
     default_window = null;
   });
@@ -169,9 +173,29 @@ function createDefaultWindow() {
 }
 
 function createLHTMLWindow() {
-  let win = new BrowserWindow({width: 800, height: 600});
+  let win = new BrowserWindow({
+    width: 800,
+    height: 600,
+    show: false,
+  });
+  win.on('ready-to-show', () => {
+    win.show();
+  })
   win.loadURL(`file://${__dirname}/lhtml_container.html`);
   var win_id = win.id;
+  win.on('close', (ev) => {
+    if (win.isDocumentEdited()) {
+      let choice = dialog.showMessageBox(win, {
+        type: 'question',
+        buttons: ['Quit', "Don't quit"],
+        title: 'Confirm',
+        message: 'Unsaved changes will be lost.  Are you sure you want to quit?'
+      });
+      if (choice === 1) {
+        ev.preventDefault();
+      }
+    }
+  })
   win.on('closed', () => {
     let doc_info = WINDOW2DOC_INFO[win_id];
     if (doc_info.tmpdir) {
@@ -244,10 +268,7 @@ app.on('ready', function() {
 
   // Disable http:// requests until we can figure out a secure
   // way to do it.
-  console.log('attempting to intercept http');
   let dropRequest = (request, callback) => {
-    console.log('http request:');
-    console.log(request);
     callback(null);
   };
   protocol.interceptHttpProtocol('http', dropRequest, (error) => {
@@ -260,7 +281,6 @@ app.on('ready', function() {
       throw new Error('failed to register https protocol');
     }
   });
-  console.log('creating default window');
 
   // Menu
   const menu = Menu.buildFromTemplate(template);
@@ -357,7 +377,6 @@ function _openPath(path) {
   WINDOW2DOC_INFO[win.id] = OPENDOCUMENTS[ident] = doc_info;
   var url = `lhtml://${ident}/index.html`;
   win.webContents.on('did-finish-load', (event) => {
-    console.log('sending load-file');
     win.webContents.send('load-file', url);
   });
 }
@@ -375,29 +394,22 @@ function saveFocusedDoc() {
 
 function _saveDoc(win) {
   var guest = win.webContents;
-  console.log('gonna get_save_data');
   return RPC.call('get_save_data', null, guest)
     .then((save_data) => {
-      console.log('received save data');
       let doc_info = WINDOW2DOC_INFO[win.id];
-      console.log('doc_info', doc_info);
       _.each(save_data, (guts, filename) => {
         var full_path = safe_join(doc_info.dir, filename);
-        console.log('fs.writeFileSync', full_path);
         fs.writeFileSync(full_path, guts);
       });
 
       // Overwrite original zip, if it's a zip
       if (doc_info.zip) {
-        console.log('writing zip');
         var zip = new AdmZip();
         zip.addLocalFolder(doc_info.dir, '.');
         zip.writeZip(doc_info.zip);
-        console.log('wrote zip');
-      } else {
-        console.log('not a zip');
       }
       console.log('saved');
+      win.setDocumentEdited(false);
       RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
       return null;
     });
@@ -409,7 +421,6 @@ function saveAsFocusedDoc() {
     return;
   }
   let doc_info = WINDOW2DOC_INFO[current.id];
-  console.log('doc_info', doc_info);
   let defaultPath = Path.dirname(doc_info.dir);
   if (doc_info.zip) {
     defaultPath = Path.dirname(doc_info.zip);
@@ -421,7 +432,6 @@ function saveAsFocusedDoc() {
       {name: 'All Files', extensions: ['*']},
     ],
   }, dst => {
-    console.log('save as', dst);
     // Copy first
     if (doc_info.zip) {
       // Copying from zip to zip
@@ -433,22 +443,19 @@ function saveAsFocusedDoc() {
       zip.addLocalFolder(doc_info.dir, '.');
       zip.writeZip(dst);
       if (doc_info.tmpdir) {
-        console.log('delete', doc_info.tmpdir);
         fs.remove(doc_info.dir, (error) => {
           if (error) {
             console.error('Error deleting tmpdir:', error);
           }
         });
       }
-      console.log("old doc_info", doc_info);
       _.merge(doc_info, _unzip(dst));
-      console.log("new doc_info", doc_info);
     }
     // Then save any outstanding changes
-    console.log('saveDoc');
     _saveDoc(current);
   })
 }
+
 
 function closeFocusedDoc() {
   let current = currentDocument();
@@ -476,10 +483,18 @@ RPC.handlers = {
   echo: (data, cb, eb) => {
     cb('echo: ' + data);
   },
-  save: (data, cb, eb) => {
-    Promise.resolve(saveFocusedDoc())
+  save: (data, cb, eb, sender_id) => {
+    let window_id = OPENDOCUMENTS[sender_id].window_id;
+    let win = BrowserWindow.fromId(window_id);
+    Promise.resolve(_saveDoc(win))
       .then(response => {
         cb(response);
       })
+  },
+  set_document_edited: (edited, cb, eb, sender_id) => {
+    let window_id = OPENDOCUMENTS[sender_id].window_id;
+    let win = BrowserWindow.fromId(window_id);
+    win.setDocumentEdited(edited);
+    cb(edited);
   }
 };

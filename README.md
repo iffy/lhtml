@@ -131,6 +131,22 @@ window.LHTML && LHTML.save().then(function() {
 </script>
 ```
 
+### `setDocumentEdited(value)`
+
+If form-saving is enabled (which it is by default and unless `disableFormSaving()` is called) then document edited state is handled automatically.  This function is mostly useful for documents with form-saving disabled.
+
+Calling this function sets the edited state of the current document.  Before closing an edited document, the application will prompt to save.  Set this to `true` to prevent closing without a prompt.  Set to `false` if there are no changes to be saved.
+
+Also, every time a document is saved, the edited state is automatically reset to `false`.
+
+Usage:
+
+```html
+<script>
+window.LHTML && LHTML.setDocumentEdited(true);
+</script>
+```
+
 
 # Why not just use Electron?
 
