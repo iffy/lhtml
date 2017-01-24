@@ -131,6 +131,20 @@ window.LHTML && LHTML.save().then(function() {
 </script>
 ```
 
+### `setDocumentEdited(value)`
+
+Sets the edited state of the current document.  Before closing an edited document, the application will prompt to save.  Set this to `true` to prevent closing without a prompt.  Set to `false` if there are no changes to be saved.
+
+Also, every time a document is saved, this is automatically set to `false`.
+
+Usage:
+
+```html
+<script>
+window.LHTML && LHTML.setDocumentEdited(true);
+</script>
+```
+
 
 # Why not just use Electron?
 

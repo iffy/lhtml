@@ -183,6 +183,19 @@ function createLHTMLWindow() {
   })
   win.loadURL(`file://${__dirname}/lhtml_container.html`);
   var win_id = win.id;
+  win.on('close', (ev) => {
+    if (win.isDocumentEdited()) {
+      let choice = dialog.showMessageBox(win, {
+        type: 'question',
+        buttons: ['Quit', "Don't quit"],
+        title: 'Confirm',
+        message: 'Unsaved changes will be lost.  Are you sure you want to quit?'
+      });
+      if (choice === 1) {
+        ev.preventDefault();
+      }
+    }
+  })
   win.on('closed', () => {
     let doc_info = WINDOW2DOC_INFO[win_id];
     if (doc_info.tmpdir) {
@@ -386,7 +399,6 @@ function saveFocusedDoc() {
 
 function _saveDoc(win) {
   var guest = win.webContents;
-  console.log('gonna get_save_data');
   return RPC.call('get_save_data', null, guest)
     .then((save_data) => {
       console.log('received save data');
@@ -409,6 +421,7 @@ function _saveDoc(win) {
         console.log('not a zip');
       }
       console.log('saved');
+      win.setDocumentEdited(false);
       RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
       return null;
     });
@@ -461,6 +474,7 @@ function saveAsFocusedDoc() {
   })
 }
 
+
 function closeFocusedDoc() {
   let current = currentDocument();
   if (current) {
@@ -487,10 +501,18 @@ RPC.handlers = {
   echo: (data, cb, eb) => {
     cb('echo: ' + data);
   },
-  save: (data, cb, eb) => {
-    Promise.resolve(saveFocusedDoc())
+  save: (data, cb, eb, sender_id) => {
+    let window_id = OPENDOCUMENTS[sender_id].window_id;
+    let win = BrowserWindow.fromId(window_id);
+    Promise.resolve(_saveDoc(win))
       .then(response => {
         cb(response);
       })
+  },
+  set_document_edited: (edited, cb, eb, sender_id) => {
+    let window_id = OPENDOCUMENTS[sender_id].window_id;
+    let win = BrowserWindow.fromId(window_id);
+    win.setDocumentEdited(edited);
+    cb(edited);
   }
 };

@@ -19,6 +19,7 @@ let LHTML = {};
 var RPC = new RPCService(ipcRenderer, {
   default_target: ipcRenderer,
   default_receiver: ipcRenderer,
+  sender_id: window.location.hostname,
 });
 RPC.listen();
 RPC.handlers = {
@@ -82,6 +83,10 @@ LHTML.registerSaver = (func) => {
 //
 LHTML.save = () => {
   return RPC.call('save');
+}
+
+LHTML.setDocumentEdited = (edited) => {
+  return RPC.call('set_document_edited', !!edited);
 }
 
 //

@@ -22,7 +22,7 @@ const {ipcRenderer} = require('electron');
 onload = () => {
   const webview = document.getElementById('theview');
   const loadstart = () => {
-    console.log('loading');
+    console.log('load start');
   }
   const loadstop = () => {
     console.log('load stop');
@@ -56,9 +56,10 @@ onload = () => {
     webview.reload();
   });
 
-  webview.addEventListener('ipc-message', (event) => {
-    console.log('got event', event);
-  });
+  // log guest
+  webview.addEventListener('console-message', (e) => {
+    console.log('GUEST:', e.message)
+  })
 }
 </script>
   </body>
