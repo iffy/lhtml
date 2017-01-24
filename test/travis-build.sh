@@ -10,4 +10,4 @@ node --version
 npm --version
 
 npm install
-mocha
+npm test
