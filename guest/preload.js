@@ -113,8 +113,11 @@ LHTML.disableFormSaving = () => {
 window.addEventListener('load', ev => {
   if (form_saving_enabled) {
     formsaving.enable();
+    formsaving.onChange((element, value) => {
+      LHTML.setDocumentEdited(true);
+    })
   }
 });
 
 window.LHTML = LHTML;
-console.log('LHTML finished loading');
+console.log('LHTML: finished loading');
