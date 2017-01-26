@@ -1,7 +1,8 @@
 // Copyright (c) The LHTML team
 // See LICENSE for details.
 
-const {electron, ipcMain, dialog, app, BrowserWindow, Menu, protocol} = require('electron');
+const {ipcMain, dialog, app, BrowserWindow, Menu, protocol} = require('electron');
+var electron = require('electron');
 const Path = require('path');
 const fs = require('fs-extra');
 const URL = require('url');
@@ -17,7 +18,7 @@ let template = [{
       label: 'Open...',
       accelerator: 'CmdOrCtrl+O',
       click() {
-        return openFile();
+        return promptOpenFile();
       },
     },
     {
@@ -243,7 +244,7 @@ protocol.registerStandardSchemes(['lhtml'])
 let openfirst;
 app.on('open-file', function(event, path) {
   if (app.isReady()) {
-    _openPath(path);
+    openPath(path);
   } else {
     openfirst = path;
   }
@@ -287,7 +288,7 @@ app.on('ready', function() {
   Menu.setApplicationMenu(menu);
 
   if (openfirst) {
-    _openPath(openfirst);
+    openPath(openfirst);
     openfirst = null;
   } else {
     // The default window
@@ -312,7 +313,7 @@ app.on('activate', () => {
   }
 });
 
-function openFile() {
+function promptOpenFile() {
   dialog.showOpenDialog({
     title: 'Open...',
     properties: ['openFile'],
@@ -324,7 +325,7 @@ function openFile() {
     if (!filePaths) {
       return;
     }
-    _openPath(filePaths[0]);
+    openPath(filePaths[0]);
   });
 }
 
@@ -336,7 +337,7 @@ function openDirectory() {
     if (!filePaths) {
       return;
     }
-    _openPath(filePaths[0]);
+    openPath(filePaths[0]);
   });
 }
 
@@ -351,7 +352,7 @@ function _unzip(path) {
   return doc_info;
 }
 
-function _openPath(path) {
+function openPath(path) {
   // Open a new window
   let win = createLHTMLWindow();
 
@@ -498,3 +499,8 @@ RPC.handlers = {
     cb(edited);
   }
 };
+
+// Test interface
+if (process.env.RUNNING_IN_SPECTRON) {
+  app.T_openPath = openPath;
+}
