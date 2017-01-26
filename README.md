@@ -3,6 +3,8 @@ Copyright (c) The LHTML team
 See LICENSE for details.
 -->
 
+[![Build Status](https://travis-ci.org/iffy/lhtml.svg?branch=master)](https://travis-ci.org/iffy/lhtml)
+
 # LHTML
 
 An LHTML file is a packaged web application with the ability to save itself.  Think PDFs but with web technologies.  For a demo, [watch this video](https://www.youtube.com/watch?v=QiAbkCHHefo):
