@@ -4,8 +4,9 @@ os:
 
 language: node_js
 
+# https://docs.travis-ci.com/user/languages/javascript-with-nodejs#Available-Versions
 node_js:
-  - '7'
+  - '6'
 
 script: ./test/travis-build.sh
 
