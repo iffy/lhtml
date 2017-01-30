@@ -149,6 +149,20 @@ window.LHTML && LHTML.setDocumentEdited(true);
 </script>
 ```
 
+### `suggestSize(width, height)`
+
+Suggest that the document be the given size (in pixels).  It will promise an object with the actual width and height the window was resized to.  The resulting size will differ from the suggested size when the suggested size is too small or too large (as determined by the LHTML viewer).
+
+Usage:
+
+```html
+<script>
+window.LHTML && LHTML.suggestSize(500, 500).then(function(size) {
+    console.log('resized to ' + size.width + ' by ' size.height);
+});
+</script>
+```
+
 
 # Why not just use Electron?
 

@@ -1,7 +1,7 @@
 // Copyright (c) The LHTML team
 // See LICENSE for details.
 
-const {ipcMain, dialog, app, BrowserWindow, Menu, protocol} = require('electron');
+const {ipcMain, dialog, app, BrowserWindow, Menu, protocol, webContents} = require('electron');
 var electron = require('electron');
 const Path = require('path');
 const fs = require('fs-extra');
@@ -161,6 +161,7 @@ function createDefaultWindow() {
     titleBarStyle: 'hidden',
     width: 400,
     height: 300,
+    resizable: false,
     show: false,
   });
   default_window.on('ready-to-show', () => {
@@ -177,10 +178,25 @@ function createLHTMLWindow() {
   let win = new BrowserWindow({
     width: 800,
     height: 600,
+    minWidth: 320,
+    minHeight: 240,
     show: false,
   });
   win.on('ready-to-show', () => {
     win.show();
+  })
+  win.on('resize', () => {
+    const [width, height] = win.getContentSize();
+    for (let wc of webContents.getAllWebContents()) {
+      if (wc.hostWebContents && wc.hostWebContents.id === win.webContents.id) {
+        wc.setSize({
+          normal: {
+            width: width,
+            height: height,
+          }
+        })
+      }
+    }
   })
   win.loadURL(`file://${__dirname}/lhtml_container.html`);
   var win_id = win.id;
@@ -497,6 +513,40 @@ RPC.handlers = {
     let win = BrowserWindow.fromId(window_id);
     win.setDocumentEdited(edited);
     cb(edited);
+  },
+  suggest_size: (size, cb, eb, sender_id) => {
+    let window_id = OPENDOCUMENTS[sender_id].window_id;
+    let win = BrowserWindow.fromId(window_id);
+    let current = win.getSize();
+
+    let newsize = {
+      width: size.width || current[0],
+      height: size.height || current[1],
+    };
+
+    // limit it to the size of the screen
+    let display = electron.screen.getDisplayMatching(win.getBounds());
+    if (newsize.width > display.workAreaSize.width) {
+      newsize.width = display.workAreaSize.width;
+    }
+    if (newsize.height > display.workAreaSize.height) {
+      newsize.height = display.workAreaSize.height;
+    }
+
+    if (!win.throttledSetSize) {
+      win.throttledSetSize = _.debounce(win.setSize, 600, {
+        leading: true,
+        trailing: false,
+      });
+    }
+
+    win.throttledSetSize(newsize.width, newsize.height);
+
+    current = win.getSize();
+    cb({
+      width: current[0],
+      height: current[1],
+    });
   }
 };
 

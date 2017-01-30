@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sizing</title>
+  <style type="text/css">
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+      widows: 100vw;
+    }
+    .body-wrap {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: stretch;
+    }
+    .leftnav {
+      background-color: red;
+      padding: 1rem;
+    }
+    .rightnav {
+      background-color: blue;
+      padding: 1rem;
+    }
+    header {
+      background-color: green;
+      padding: 1rem;
+    }
+    footer {
+      background-color: orange;
+      padding: 1rem;
+    }
+    .body {
+      padding: 1rem;
+      flex-grow: 1;
+      background-color: bisque;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="leftnav">Left nav</div>
+    <div class="body-wrap">
+      <header>The header</header>
+      <div class="body">The body
+        <button onclick="LHTML.suggestSize(1, 1)">Tiny</button>
+        <button onclick="LHTML.suggestSize(400, 400)">400 x 400</button>
+        <button onclick="LHTML.suggestSize(20000, 20000)">Huge</button>
+        <button onclick="LHTML.suggestSize(200, 200).then(function() { return LHTML.suggestSize(600, 600); })">Flicker</button>
+      </div>
+      <footer>The footer</footer>
+    </div>
+    <div class="rightnav">Right nav</div>
+  </div>
+</body>
+</html>
