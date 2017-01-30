@@ -6,8 +6,8 @@ if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
   sleep 3
 fi
 
-node --version
-npm --version
+echo "node $(node --version)"
+echo "npm $(npm --version)"
 
 npm install
 npm test

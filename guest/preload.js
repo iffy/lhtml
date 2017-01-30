@@ -119,5 +119,15 @@ window.addEventListener('load', ev => {
   }
 });
 
+//
+// Suggest that the document be of a certain size (in pixels)
+//
+LHTML.suggestSize = (width, height) => {
+  return RPC.call('suggest_size', {
+    width: width,
+    height: height,
+  });
+}
+
 window.LHTML = LHTML;
 console.log('LHTML: finished loading');
