@@ -10,6 +10,11 @@ const {RPCService} = require('./rpc.js');
 const _ = require('lodash');
 const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
+const log = require('electron-log');
+
+import {autoUpdater} from "electron-updater"
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
 
 let template = [{
   label: 'File',
@@ -363,7 +368,7 @@ function _unzip(path) {
   doc_info.dir = doc_info.tmpdir.name;
   doc_info.zip = path;
   let zip = new AdmZip(path);
-  console.log('extracting to', doc_info.dir);
+  log.info('extracting to', doc_info.dir);
   zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
   return doc_info;
 }
@@ -425,7 +430,7 @@ function _saveDoc(win) {
         zip.addLocalFolder(doc_info.dir, '.');
         zip.writeZip(doc_info.zip);
       }
-      console.log('saved');
+      log.info('saved');
       win.setDocumentEdited(false);
       RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
       return null;

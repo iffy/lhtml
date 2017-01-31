@@ -200,3 +200,12 @@ To package the application, do one of these:
 
 The `-mwl` is short for `--mac --win --linux` and you can omit them if you only want to build for the current platform.
 
+# Releases
+
+XXX This is still goofy...
+
+To manually create a draft release, do:
+
+    build --draft -p always
+
+
