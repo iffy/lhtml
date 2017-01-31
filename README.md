@@ -204,8 +204,7 @@ The `-mwl` is short for `--mac --win --linux` and you can omit them if you only 
 
 XXX This is still goofy...
 
-To manually create a draft release, do:
+To manually create a draft release, you'll need a `GH_TOKEN` with `repo` scope access.  Generate one on GitHub (in Settings somewhere).  Once you have the token do:
 
-    build --draft -p always
-
+    GH_TOKEN="..." build --draft -p always
 
