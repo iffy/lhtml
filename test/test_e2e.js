@@ -5,7 +5,7 @@ var {Application} = require('spectron');
 const {waitUntil, waitUntilEqual} = require('./util.js');
 
 describe('app launch', function() {
-  this.timeout(10000);
+  this.timeout(60000);
   let app;
   let tapp;
 

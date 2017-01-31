@@ -14,6 +14,12 @@ An LHTML file is a packaged web application with the ability to save itself.  Th
 
 **The current application is considered Alpha-quality.  Use at your own risk, and all that.**
 
+# Installation
+
+- [Download the latest](https://github.com/iffy/lhtml/releases)
+- Or clone this repo and [build from source](#packaging)
+- Or clone this repo and follow the [development instructions](#development)
+
 # Making LHTML files
 
 To create an LHTML file, create an `index.html` file:
@@ -61,6 +67,16 @@ LHTML files are not allowed to access resources over the network.  This is inten
 ## API
 
 LHTML viewers provide a small JavaScript API to `index.html` files within the `LHTML` object.  Available endpoints are described here:
+
+| Function/Variable | Short description |
+|---|---|
+| [`defaultSaver`](#defaultsaver) | The function that will be used for saving if `registerSaver` isn't called |
+| [`disableFormSaving()`](#disableformsaving) | Called to disable automatic form saving |
+| [`on(...)`](#onevent-handler) | Listen for events |
+| [`registerSaver(...)`](#registersaverfunc) | Register a function to determine how the document is saved |
+| [`save()`](#save) | Programatically save the current document |
+| [`setDocumentEdited(...)`](#setdocumenteditedvalue) | Indicate that there are changes to be saved |
+| [`suggestSize(...)`](#suggestsizewidth-height) | Attempt to resize the document |
 
 ### `defaultSaver`
 
@@ -193,9 +209,19 @@ To run the application in development mode do:
 
 # Packaging
 
-To package the application, do:
+To do cross-platform builds, see [this guide](https://github.com/electron-userland/electron-builder/wiki/Multi-Platform-Build)
 
-    npm install
-    ./build.sh mac
-    ./build.sh linux
+To package the application, do one of these:
+
+    build -mwl
+
+The `-mwl` is short for `--mac --win --linux` and you can omit them if you only want to build for the current platform.
+
+# Releases
+
+XXX This is still goofy...
+
+To manually create a draft release, you'll need a `GH_TOKEN` with `repo` scope access.  Generate one on GitHub (in Settings somewhere).  Once you have the token do:
+
+    GH_TOKEN="..." build --draft -p always
 

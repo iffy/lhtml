@@ -3,10 +3,19 @@
   "productName": "LHTML",
   "version": "0.1.0",
   "main": "main.js",
+  "description": "LHTML Viewer",
+  "author": {
+    "name": "Matt Haggard",
+    "email": "haggardii@gmail.com"
+  },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "pack": "build --dir",
+    "dist": "build",
+    "postinstall": "install-app-deps"
   },
   "devDependencies": {
+    "electron-builder": "^12.0.3",
     "electron-packager": "^8.5.0",
     "electron-prebuilt": "^1.4.13",
     "http-server": "^0.9.0",
@@ -15,8 +24,33 @@
   },
   "dependencies": {
     "adm-zip": "^0.4.7",
+    "electron-log": "^1.3.0",
+    "electron-updater": "^1.3.2",
     "fs-extra": "^2.0.0",
     "lodash": "^4.17.4",
     "tmp": "0.0.31"
+  },
+  "build": {
+    "appId": "com.github.iffy.lhtml",
+    "mac": {
+      "category": "your.app.category.type",
+      "publish": [
+        "github"
+      ],
+      "target": ["zip", "dmg"]
+    },
+    "dmg": {},
+    "fileAssociations": [
+      {
+        "ext": "lhtml",
+        "role": "Editor"
+      }
+    ],
+    "linux": {
+      "target": ["AppImage", "rpm", "deb", "tar.gz"]
+    },
+    "nsis": {
+      "perMachine": true
+    }
   }
 }
