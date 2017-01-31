@@ -12,7 +12,7 @@ const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const log = require('electron-log');
 
-import {autoUpdater} from "electron-updater"
+var {autoUpdater} = require("electron-updater");
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 
