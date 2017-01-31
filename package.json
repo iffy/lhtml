@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "main": "main.js",
   "description": "LHTML Viewer",
-  "author": "Matt Haggard",
+  "author": {
+    "name": "Matt Haggard",
+    "email": "haggardii@gmail.com"
+  },
   "scripts": {
     "test": "mocha",
     "pack": "build --dir",
@@ -33,7 +36,8 @@
       "category": "your.app.category.type",
       "publish": [
         "github"
-      ]
+      ],
+      "target": ["zip", "dmg"]
     },
     "dmg": {},
     "fileAssociations": [
@@ -41,6 +45,12 @@
         "ext": "lhtml",
         "role": "Editor"
       }
-    ]
+    ],
+    "linux": {
+      "target": ["AppImage", "rpm", "deb", "tar.gz"]
+    },
+    "nsis": {
+      "perMachine": true
+    }
   }
 }

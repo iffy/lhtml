@@ -14,6 +14,12 @@ An LHTML file is a packaged web application with the ability to save itself.  Th
 
 **The current application is considered Alpha-quality.  Use at your own risk, and all that.**
 
+# Installation
+
+- [Download the latest](https://github.com/iffy/lhtml/releases)
+- Or clone this repo and [build from source](#packaging)
+- Or clone this repo and follow the [development instructions](#development)
+
 # Making LHTML files
 
 To create an LHTML file, create an `index.html` file:
@@ -192,6 +198,8 @@ To run the application in development mode do:
     node_modules/.bin/electron .
 
 # Packaging
+
+To do cross-platform builds, see [this guide](https://github.com/electron-userland/electron-builder/wiki/Multi-Platform-Build)
 
 To package the application, do one of these:
 
