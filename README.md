@@ -193,9 +193,10 @@ To run the application in development mode do:
 
 # Packaging
 
-To package the application, do:
+To package the application, do one of these:
 
-    npm install
-    ./build.sh mac
-    ./build.sh linux
+    build -mwl
+    build --dir -mwl
+
+The `-mwl` is short for `--mac --win --linux` and you can omit them if you only want to build for the current platform.
 
