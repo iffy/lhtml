@@ -68,6 +68,16 @@ LHTML files are not allowed to access resources over the network.  This is inten
 
 LHTML viewers provide a small JavaScript API to `index.html` files within the `LHTML` object.  Available endpoints are described here:
 
+| Function/Variable | Short description |
+|---|---|
+| [`defaultSaver`](#defaultsaver) | The function that will be used for saving if `registerSaver` isn't called |
+| [`disableFormSaving()`](#disableformsaving) | Called to disable automatic form saving |
+| [`on(...)`](#onevent-handler) | Listen for events |
+| [`registerSaver(...)`](#registersaverfunc) | Register a function to determine how the document is saved |
+| [`save()`](#save) | Programatically save the current document |
+| [`setDocumentEdited(...)`](#setdocumenteditedvalue) | Indicate that there are changes to be saved |
+| [`suggestSize(...)`](#suggestsizewidth-height) | Attempt to resize the document |
+
 ### `defaultSaver`
 
 This is the saving function used by default (if none is provided by calling `registerSaver`).  It will take the current state of `index.html` and overwrite `index.html` within the LHTML zip.
@@ -204,7 +214,6 @@ To do cross-platform builds, see [this guide](https://github.com/electron-userla
 To package the application, do one of these:
 
     build -mwl
-    build --dir -mwl
 
 The `-mwl` is short for `--mac --win --linux` and you can omit them if you only want to build for the current platform.
 
