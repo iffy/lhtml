@@ -213,15 +213,13 @@ To do cross-platform builds, see [this guide](https://github.com/electron-userla
 
 To package the application, do one of these:
 
-    build -mwl
+    build --win --mac --linux --ia32 --x64
 
-The `-mwl` is short for `--mac --win --linux` and you can omit them if you only want to build for the current platform.
+You can omit whichever arch/platform you don't need to build.
 
 # Releases
 
-XXX This is still goofy...
-
 To manually create a draft release, you'll need a `GH_TOKEN` with `repo` scope access.  Generate one on GitHub (in Settings somewhere).  Once you have the token do:
 
-    GH_TOKEN="..." build --draft -p always
+    GH_TOKEN="..." build --win --mac --linux --ia32 --x64 --draft -p always
 
