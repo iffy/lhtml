@@ -15,6 +15,24 @@ const log = require('electron-log');
 var {autoUpdater} = require("electron-updater");
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
+autoUpdater.on('checking-for-update', (ev) => {
+  console.log('up: checking for update', ev);
+})
+autoUpdater.on('update-available', (ev) => {
+  console.log('up: update available', ev);
+})
+autoUpdater.on('update-not-available', (ev) => {
+  console.log('up: update not available', ev);
+})
+autoUpdater.on('error', (ev) => {
+  console.log('up: error', ev);
+})
+autoUpdater.on('download-progress', (ev) => {
+  console.log('up: download-progress', ev);
+})
+autoUpdater.on('update-downloaded', (ev) => {
+  console.log('up: update-downloaded', ev);
+})
 
 let template = [{
   label: 'File',
@@ -170,12 +188,13 @@ function createDefaultWindow() {
     show: false,
   });
   default_window.on('ready-to-show', () => {
+    default_window.webContents
     default_window.show();
   })
   default_window.on('closed', () => {
     default_window = null;
   });
-  default_window.loadURL(`file://${__dirname}/default.html`);
+  default_window.loadURL(`file://${__dirname}/default.html?version=v${app.getVersion()}`);
   return default_window;
 }
 

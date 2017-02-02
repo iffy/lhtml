@@ -31,6 +31,10 @@ See LICENSE for details.
     color: grey;
     font-size: 24pt;
     font-family: Arial;
+    flex-direction: column;
+  }
+  .version {
+    font-size: 10pt;
   }
   </style>
 </head>
@@ -38,7 +42,24 @@ See LICENSE for details.
   <div class="outer">
     <div class="inner">
       <div>LHTML Viewer</div>
+      <div class="version" id="version">vX.X.X</div>
     </div>
   </div>
+<script>
+const {ipcRenderer} = require('electron');
+
+function parseQuery() {
+  var ret = {};
+  var qry = window.location.search.substring(1);
+  var vars = qry.split('&');
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split('=');
+    ret[pair[0]] = pair[1];
+  }
+  return ret;
+}
+var vars = parseQuery();
+document.getElementById('version').innerHTML = vars['version'];
+</script>
 </body>
 </html>
