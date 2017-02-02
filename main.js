@@ -12,27 +12,6 @@ const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const log = require('electron-log');
 
-var {autoUpdater} = require("electron-updater");
-autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = 'info';
-autoUpdater.on('checking-for-update', (ev) => {
-  console.log('up: checking for update', ev);
-})
-autoUpdater.on('update-available', (ev) => {
-  console.log('up: update available', ev);
-})
-autoUpdater.on('update-not-available', (ev) => {
-  console.log('up: update not available', ev);
-})
-autoUpdater.on('error', (ev) => {
-  console.log('up: error', ev);
-})
-autoUpdater.on('download-progress', (ev) => {
-  console.log('up: download-progress', ev);
-})
-autoUpdater.on('update-downloaded', (ev) => {
-  console.log('up: update-downloaded', ev);
-})
 
 let template = [{
   label: 'File',
@@ -144,6 +123,12 @@ if (process.platform === 'darwin') {
         label: 'About ' + name,
         role: 'about'
       },
+      {
+        label: 'Check for updates...',
+        click() {
+          promptForUpdate();
+        },
+      },
       {type: 'separator'},
       {
         label: 'Services',
@@ -188,14 +173,98 @@ function createDefaultWindow() {
     show: false,
   });
   default_window.on('ready-to-show', () => {
-    default_window.webContents
     default_window.show();
+    if (UPDATE_DOWNLOADED) {
+      console.log('gonna send update-downloaded');
+      default_window.webContents.send('update-downloaded');
+    }
   })
   default_window.on('closed', () => {
     default_window = null;
   });
   default_window.loadURL(`file://${__dirname}/default.html?version=v${app.getVersion()}`);
   return default_window;
+}
+
+//-------------------------------------------------------------------
+// Auto updates
+//-------------------------------------------------------------------
+var {autoUpdater} = require("electron-updater");
+let UPDATE_DOWNLOADED = false;
+let update_window;
+
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+autoUpdater.on('checking-for-update', (ev) => {
+  sendToUpdateWindow('checking-for-update');
+})
+autoUpdater.on('update-available', (ev) => {
+  sendToUpdateWindow('update-available');
+})
+autoUpdater.on('update-not-available', (ev) => {
+  sendToUpdateWindow('update-not-available');
+})
+autoUpdater.on('error', (ev) => {
+  sendToUpdateWindow('error');
+})
+autoUpdater.on('download-progress', (ev) => {
+})
+autoUpdater.on('update-downloaded', (ev, releaseNotes, releaseName, releaseDate, updateURL) => {
+  UPDATE_DOWNLOADED = releaseName;
+  promptForUpdate();
+})
+ipcMain.on('do-update', () => {
+  if (UPDATE_DOWNLOADED) {
+    autoUpdater.quitAndInstall();
+  }
+});
+
+if (process.env.CHECK_FOR_UPDATES === "no") {
+  console.log('UPDATE CHECKING DISABLED');
+} else {
+  autoUpdater.checkForUpdates()
+  .then(result => {
+    console.log('check for updates result', result);
+  })
+  .catch(err => {
+    console.log('Error checking for update');
+  })
+}
+
+function promptForUpdate() {
+  if (update_window) {
+    // already exists
+    if (UPDATE_DOWNLOADED) {
+      update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
+    }
+    return;
+  }
+  update_window = new BrowserWindow({
+    titleBarStyle: 'hidden',
+    x: 0,
+    y: 10,
+    width: 400,
+    height: 200,
+    resizable: false,
+    show: false,
+  });
+  update_window.on('ready-to-show', () => {
+    update_window.show();
+    if (UPDATE_DOWNLOADED) {
+      update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
+    }
+  })
+  update_window.on('closed', () => {
+    update_window = null;
+  });
+  update_window.loadURL(`file://${__dirname}/updates.html?version=v${app.getVersion()}`);
+  return update_window;
+}
+
+function sendToUpdateWindow(name, data) {
+  if (update_window) {
+    update_window.webContents.send(name, data);
+  }
 }
 
 function createLHTMLWindow() {
