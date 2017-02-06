@@ -163,6 +163,7 @@ Usage:
 window.LHTML && LHTML.fs.writeFile('foo.txt', 'guts').then(function() {
     return LHTML.save();
 });
+```
 
 ### `on(...)`
 
