@@ -1,5 +1,6 @@
 var fs = require('fs-extra');
 var Path = require('path');
+const klaw = require('klaw');
 const _ = require('lodash');
 
 class CBPromise {
@@ -116,7 +117,7 @@ class ChrootFS {
       }
     });
   }
-  writeFile(path, contents) {
+  writeFile(path, data) {
     return this._getPath(path)
     .then(abspath => {
       // XXX check that the amount of data being written is okay.
@@ -124,7 +125,7 @@ class ChrootFS {
       // the future, perhaps we could cache some information.
       return getDirSize(this._root)
         .then(size => {
-          let projected_size = size + contents.length;
+          let projected_size = size + data.length;
           if (projected_size > this.maxBytes) {
             throw new TooBigError("This operation will exceed the max size of " + this.maxBytes);
           } else {
@@ -140,7 +141,7 @@ class ChrootFS {
       })
       .then(() => {
         return new Promise((resolve, reject) => {
-          fs.writeFile(abspath, contents, null, (err) => {
+          fs.writeFile(abspath, data, null, (err) => {
             resolve(err);
           });  
         })
@@ -159,6 +160,58 @@ class ChrootFS {
           }
         }); 
       })
+    })
+  }
+  listdir() {
+    return this._getRoot()
+    .then(root => {
+      return new Promise((resolve, reject) => {
+        let items = [];
+        klaw(root)
+          .on('readable', function() {
+            let item;
+            while (item = this.read()) {
+              let path = Path.relative(root, item.path);
+              if (path === '') {
+                // root
+                continue
+              }
+              let dirname = Path.dirname(path);
+              if (dirname === '.') {
+                dirname = '';
+              }
+              let res = {
+                name: Path.basename(path),
+                path: path,
+                dir: dirname,
+              }
+              if (item.stats.isDirectory()) {
+                res.isdir = true;
+              }
+              items.push(res);
+            }
+          })
+          .on('error', (err, item) => {
+            console.error('error', err, item);
+          })
+          .on('end', () => {
+            resolve(items);
+          })
+      });
+    })
+  }
+  remove(path) {
+    return this._getPath(path)
+    .then(abspath => {
+      return new Promise((resolve, reject) => {
+        fs.remove(abspath, (err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(null);
+          }
+        });
+      });
     })
   }
 }

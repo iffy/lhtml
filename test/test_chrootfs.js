@@ -1,6 +1,7 @@
 var assert = require('assert');
 var fs = require('fs-extra');
 var Path = require('path');
+const _ = require('lodash');
 const Tmp = require('tmp');
 const {ChrootFS, TooBigError} = require('../chrootfs.js');
 
@@ -108,27 +109,76 @@ describe('ChrootFS', function() {
     });
   });
 
-  describe('.tree', function() {
-    it('allows listing the whole tree', () => {
-      assert.equal(true, false, 'write me');
+  describe('.listdir', function() {
+    it('lists recursively by default', () => {
+      let chfs = new ChrootFS(tmpdir);
+      fs.writeFileSync(Path.join(tmpdir, 'a.txt'), 'a contents');
+      fs.writeFileSync(Path.join(tmpdir, 'b.txt'), 'b contents');
+      fs.ensureDirSync(Path.join(tmpdir, 'sub'))
+      fs.writeFileSync(Path.join(tmpdir, 'sub/c.txt'), 'c contents');
+      fs.writeFileSync(Path.join(tmpdir, 'sub/d.txt'), 'd contents');
+      return chfs.listdir()
+        .then(contents => {
+          assert.equal(contents.length, 5);
+          _.each(contents, file => {
+            if (file.name === 'a.txt') {
+              assert.equal(file.path, 'a.txt');
+              assert.equal(file.dir, '');
+            } else if (file.name === 'b.txt') {
+              assert.equal(file.path, 'b.txt');
+              assert.equal(file.dir, '');
+            } else if (file.name === 'sub') {
+              assert.equal(file.path, 'sub');
+              assert.equal(file.dir, '');
+              assert.equal(file.isdir, true);
+            } else if (file.name === 'c.txt') {
+              assert.equal(file.path, 'sub/c.txt');
+              assert.equal(file.dir, 'sub');
+            } else if (file.name === 'd.txt') {
+              assert.equal(file.path, 'sub/d.txt');
+              assert.equal(file.dir, 'sub');
+            } else {
+              assert.equal(true, false, "Unexpected file: " + file.name);
+            }
+          })
+        });
     })
   });
 
-  describe('.listdir', function() {
-    it('allows listing dirs/files', () => {
-      assert.equal(true, false, 'write me');
-    });
-  });
-
   describe('.remove', function() {
-    it('allows deleting files', () => {
-      assert.equal(true, false, 'write me');
+    it('deletes files', () => {
+      let chfs = new ChrootFS(tmpdir);
+      fs.writeFileSync(Path.join(tmpdir, 'a.txt'), 'a contents');
+      return chfs.remove('a.txt')
+        .then(() => {
+          return chfs.listdir();
+        })
+        .then(contents => {
+          assert.equal(contents.length, 0);
+        });
     });
-    it('allows deleting directories', () => {
-      assert.equal(true, false, 'write me');
+    it('deletes directories', () => {
+      let chfs = new ChrootFS(tmpdir);
+      fs.ensureDirSync(Path.join(tmpdir, 'subdir'));
+      return chfs.remove('subdir')
+        .then(() => {
+          return chfs.listdir();
+        })
+        .then(contents => {
+          assert.equal(contents.length, 0);
+        });
     });
-    it('allows deleting full directories', () => {
-      assert.equal(true, false, 'write me');
+    it('deletes full directories', () => {
+      let chfs = new ChrootFS(tmpdir);
+      fs.ensureDirSync(Path.join(tmpdir, 'subdir'));
+      fs.writeFileSync(Path.join(tmpdir, 'subdir/a.txt'), 'a contents');
+      return chfs.remove('subdir')
+        .then(() => {
+          return chfs.listdir();
+        })
+        .then(contents => {
+          assert.equal(contents.length, 0);
+        });
     });
   })
 })
