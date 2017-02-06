@@ -90,6 +90,36 @@ LHTML.setDocumentEdited = (edited) => {
 }
 
 //
+//  Overwrite file
+//
+LHTML.writeFile = (path, data) => {
+  return RPC.call('writeFile', {
+    path: path,
+    data: data,
+  });
+}
+
+//
+//  Read the contents of a file.
+//
+LHTML.readFile = (path) => {
+  return RPC.call('readFile', path);
+}
+//
+//  Delete a file/directory
+//
+LHTML.remove = (path) => {
+  return RPC.call('remove', path);
+}
+
+//
+//  List contents of directory
+//
+LHTML.listdir = (path) => {
+  return RPC.call('listdir', path);
+}
+
+//
 //  Register something to handle events.
 //
 //  Some events:

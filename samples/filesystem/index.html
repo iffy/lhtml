@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FileSystem</title>
+</head>
+<body>
+  <div id="dirlisting" style="white-space: pre; font-family: monospace;"></div>
+  <script>
+  LHTML.writeFile('thedate.txt', new Date() + '')
+  .then(() => {
+    console.log('wrote the date to thedate.txt');
+  });
+  function doList() {
+    LHTML.listdir()
+    .then(items => {
+      document.getElementById('dirlisting').innerHTML = JSON.stringify(items, null, 2);
+    })
+  }
+  doList();
+  setInterval(() => {
+    doList();
+  }, 10000)
+  </script>
+</body>
+</html>

@@ -124,9 +124,11 @@ describe('ChrootFS', function() {
             if (file.name === 'a.txt') {
               assert.equal(file.path, 'a.txt');
               assert.equal(file.dir, '');
+              assert.equal(file.size, 'a contents'.length);
             } else if (file.name === 'b.txt') {
               assert.equal(file.path, 'b.txt');
               assert.equal(file.dir, '');
+              assert.equal(file.size, 'b contents'.length);
             } else if (file.name === 'sub') {
               assert.equal(file.path, 'sub');
               assert.equal(file.dir, '');
@@ -134,9 +136,11 @@ describe('ChrootFS', function() {
             } else if (file.name === 'c.txt') {
               assert.equal(file.path, 'sub/c.txt');
               assert.equal(file.dir, 'sub');
+              assert.equal(file.size, 'c contents'.length);
             } else if (file.name === 'd.txt') {
               assert.equal(file.path, 'sub/d.txt');
               assert.equal(file.dir, 'sub');
+              assert.equal(file.size, 'd contents'.length);
             } else {
               assert.equal(true, false, "Unexpected file: " + file.name);
             }

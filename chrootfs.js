@@ -184,6 +184,7 @@ class ChrootFS {
                 name: Path.basename(path),
                 path: path,
                 dir: dirname,
+                size: item.stats.size,
               }
               if (item.stats.isDirectory()) {
                 res.isdir = true;
