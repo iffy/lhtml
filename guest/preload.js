@@ -89,35 +89,39 @@ LHTML.setDocumentEdited = (edited) => {
   return RPC.call('set_document_edited', !!edited);
 }
 
+
+//---------------------------
+// FileSystem stuff
+//---------------------------
+LHTML.fs = {};
 //
 //  Overwrite file
 //
-LHTML.writeFile = (path, data) => {
+LHTML.fs.writeFile = (path, data) => {
   return RPC.call('writeFile', {
     path: path,
     data: data,
   });
 }
-
 //
 //  Read the contents of a file.
 //
-LHTML.readFile = (path) => {
+LHTML.fs.readFile = (path) => {
   return RPC.call('readFile', path);
 }
 //
 //  Delete a file/directory
 //
-LHTML.remove = (path) => {
+LHTML.fs.remove = (path) => {
   return RPC.call('remove', path);
 }
-
 //
 //  List contents of directory
 //
-LHTML.listdir = (path) => {
+LHTML.fs.listdir = (path) => {
   return RPC.call('listdir', path);
 }
+
 
 //
 //  Register something to handle events.

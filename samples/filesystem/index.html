@@ -6,12 +6,12 @@
 <body>
   <div id="dirlisting" style="white-space: pre; font-family: monospace;"></div>
   <script>
-  LHTML.writeFile('thedate.txt', new Date() + '')
+  LHTML.fs.writeFile('thedate.txt', new Date() + '')
   .then(() => {
     console.log('wrote the date to thedate.txt');
   });
   function doList() {
-    LHTML.listdir()
+    LHTML.fs.listdir()
     .then(items => {
       document.getElementById('dirlisting').innerHTML = JSON.stringify(items, null, 2);
     })

@@ -72,11 +72,15 @@ LHTML viewers provide a small JavaScript API to `index.html` files within the `L
 |---|---|
 | [`defaultSaver`](#defaultsaver) | The function that will be used for saving if `registerSaver` isn't called |
 | [`disableFormSaving()`](#disableformsaving) | Called to disable automatic form saving |
-| [`on(...)`](#onevent-handler) | Listen for events |
-| [`registerSaver(...)`](#registersaverfunc) | Register a function to determine how the document is saved |
+| [`fs.listdir()`](#fs-listdir) | List contents of the zip |
+| [`fs.readFile(...)`](#fs-readfile) | Read a file from the document zip |
+| [`fs.remove(...)`](#fs-remove) | Remove a file/dir from the document zip |
+| [`fs.writeFile(...)`](#fs-writefile) | Overwrite a file within the document zip |
+| [`on(...)`](#on) | Listen for events |
+| [`registerSaver(...)`](#registersaver) | Register a function to determine how the document is saved |
 | [`save()`](#save) | Programatically save the current document |
-| [`setDocumentEdited(...)`](#setdocumenteditedvalue) | Indicate that there are changes to be saved |
-| [`suggestSize(...)`](#suggestsizewidth-height) | Attempt to resize the document |
+| [`setDocumentEdited(...)`](#setdocumentedited) | Indicate that there are changes to be saved |
+| [`suggestSize(...)`](#suggestsize) | Attempt to resize the document |
 
 ### `defaultSaver`
 
@@ -103,7 +107,66 @@ Usage:
 </body>
 ```
 
-### `on(event, handler)`
+### `fs.listdir()`
+
+List the full contents of the LHTML zip file.  Returns a list of objects with the following members:
+
+| Key | Description |
+|---|---|
+| `name` | Base name of file/dir |
+| `path` | Full relative path of file/dir |
+| `dir` | Full relative path of containing dir |
+| `size` | Size of file/dir in bytes |
+
+Usage:
+
+```javascript
+window.LHTML && LHTML.fs.listdir().then(function(items) {
+    items.foreach(function(item) {
+        console.log(item.path + ': ' + item.size + 'B');
+    });
+});
+```
+
+### `fs.readFile(...)`
+
+Read an entire file's contents into a string.
+
+Usage:
+
+```javascript
+window.LHTML && LHTML.fs.readFile('something.txt').then(function(contents) {
+    console.log('something.txt contains:');
+    console.log(contents);
+})
+```
+
+### `fs.remove(...)`
+
+Delete a file/directory from the zipfile.  **You must call `save()` afterward if you want the deletion to be permanent.**
+
+Usage:
+
+```javascript
+window.LHTML && LHTML.fs.remove('foo.txt').then(function() {
+    return LHTML.save();
+})
+```
+
+### `fs.writeFile(...)`
+
+Overwrite a file, creating it if necessary.  Also, any subdirectories needed will be created.  **You must call `save()` afterward if you want the writing to be permanent.**
+
+Usage:
+
+```javascript
+window.LHTML && LHTML.fs.writeFile('foo.txt', 'guts').then(function() {
+    return LHTML.save();
+});
+
+### `on(...)`
+
+`on(event, handler)`
 
 Listen for one of these events:
 
@@ -117,7 +180,9 @@ window.LHTML && LHTML.on('saved', function() {
 })
 ```
 
-### `registerSaver(func)`
+### `registerSaver(...)`
+
+`registerSaver(func)`
 
 Registers a function to be called when the application is to be saved.  By default `LHTML.defaultSaver` is used.
 
@@ -149,7 +214,9 @@ window.LHTML && LHTML.save().then(function() {
 </script>
 ```
 
-### `setDocumentEdited(value)`
+### `setDocumentEdited(...)`
+
+`setDocumentEdited(value)`
 
 If form-saving is enabled (which it is by default and unless `disableFormSaving()` is called) then document edited state is handled automatically.  This function is mostly useful for documents with form-saving disabled.
 
@@ -165,7 +232,9 @@ window.LHTML && LHTML.setDocumentEdited(true);
 </script>
 ```
 
-### `suggestSize(width, height)`
+### `suggestSize(...)`
+
+`suggestSize(width, height)`
 
 Suggest that the document be the given size (in pixels).  It will promise an object with the actual width and height the window was resized to.  The resulting size will differ from the suggested size when the suggested size is too small or too large (as determined by the LHTML viewer).
 
