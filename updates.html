@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<!--
+Copyright (c) The LHTML team
+See LICENSE for details.
+-->
+<head>
+  <title>LHTML Viewer</title>
+  <style type="text/css">
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: white;
+    -ms-overflow-style: scrollbar;
+    -webkit-app-region:drag;
+    font-family: Arial;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  .wrap {
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    justify-content: center;
+    align-items: center;
+  }
+  .wrap .icon {
+    margin: 20px;
+  }
+  #do-update-btn {
+    visibility: hidden;
+    transition: box-shadow 0.2s;
+    margin-top: 16px;
+  }
+  #do-update-btn.visible {
+    visibility: visible;
+  }
+  #do-update-btn img {
+    height: 12px;
+    width: 11px;
+    vertical-align: bottom;
+    margin-right: 3px;
+  }
+  #do-update-btn:hover {
+    box-shadow: 0px 0px 5px green;
+  }
+  hr {
+    height: 1px;
+    border: 1px solid lightgrey;
+    border-width: 1px 0 0;
+    width: 100%;
+  }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      LHTML current version: <span id="version">vX.Y.Z</span>
+    </div>
+    <hr/>
+    <div id="status">
+      You have the latest version.
+    </div>
+    <div>
+      <button id="do-update-btn"><img src="img/arrow.png"> Update to latest version</button>
+    </div>
+  </div>
+<script>
+const {ipcRenderer} = require('electron');
+
+function parseQuery() {
+  var ret = {};
+  var qry = window.location.search.substring(1);
+  var vars = qry.split('&');
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split('=');
+    ret[pair[0]] = pair[1];
+  }
+  return ret;
+}
+var vars = parseQuery();
+document.getElementById('version').innerHTML = vars['version'];
+
+function setStatus(html) {
+  document.getElementById('status').innerHTML = html;
+}
+ipcRenderer.on('checking-for-update', () => {
+  setStatus('Checking for updates...');
+})
+ipcRenderer.on('error', () => {
+  setStatus('Error checking for updates :(');
+})
+ipcRenderer.on('update-available', () => {
+  setStatus('An update is available...');
+})
+ipcRenderer.on('update-not-available', () => {
+  setStatus('You have the latest version.');
+})
+ipcRenderer.on('download-progress', () => {
+  setStatus('An update is being downloaded...');
+})
+ipcRenderer.on('update-downloaded', (ev, releaseName) => {
+  document.getElementById('do-update-btn').className += ' visible';
+  setStatus('<b>A new version is available: ' + releaseName + '</b>');
+})
+document.getElementById('do-update-btn').addEventListener('click', function() {
+  ipcRenderer.send('do-update');
+});
+</script>
+</body>
+</html>

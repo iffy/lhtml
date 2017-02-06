@@ -10,4 +10,5 @@ echo "node $(node --version)"
 echo "npm $(npm --version)"
 
 npm install
+export CHECK_FOR_UPDATES="no"
 npm test
