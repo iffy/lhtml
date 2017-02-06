@@ -117,6 +117,7 @@ List the full contents of the LHTML zip file.  Returns a list of objects with th
 | `path` | Full relative path of file/dir |
 | `dir` | Full relative path of containing dir |
 | `size` | Size of file/dir in bytes |
+| `isdir` | Optional.  `true` if this item is a directory, otherwise `undefined` |
 
 Usage:
 
