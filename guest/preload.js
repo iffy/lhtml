@@ -23,21 +23,20 @@ var RPC = new RPCService(ipcRenderer, {
 });
 RPC.listen();
 RPC.handlers = {
-  echo: (data, cb, eb) => {
-    cb('echo:' + data);
+  echo: (ctx, data) => {
+    return 'echo:' + data;
   },
-  get_save_data: (data, cb, eb) => {
+  get_save_data: (ctx, data) => {
     if (SAVER) {
-      cb(SAVER());
+      return SAVER();
     }
   },
-  emit_event: (data, cb, eb) => {
+  emit_event: (ctx, data) => {
     var event = data.key;
     var event_data = data.data;
     _.each(EVENT_HANDLERS[data.key], (func) => {
       func(EVENT_HANDLERS[data.data]);
     });
-    cb(null);
   }
 }
 
