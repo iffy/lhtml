@@ -11,6 +11,7 @@ const _ = require('lodash');
 const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const log = require('electron-log');
+const {ChrootFS} = require('./chrootfs.js');
 
 
 let template = [{
@@ -481,6 +482,7 @@ function openPath(path) {
     // Open expanded directory
     doc_info.dir = path;
   }
+  doc_info.chroot = new ChrootFS(doc_info.dir);
 
   WINDOW2DOC_INFO[win.id] = OPENDOCUMENTS[ident] = doc_info;
   var url = `lhtml://${ident}/index.html`;
@@ -637,6 +639,42 @@ RPC.handlers = {
     cb({
       width: current[0],
       height: current[1],
+    });
+  },
+  listdir: (path, cb, eb, sender_id) => {
+    OPENDOCUMENTS[sender_id].chroot.listdir(path)
+    .then(items => {
+      cb(items);
+    })
+    .catch(err => {
+      eb(err);
+    });
+  },
+  writeFile: (ctx, cb, eb, sender_id) => {
+    OPENDOCUMENTS[sender_id].chroot.writeFile(ctx.path, ctx.data)
+    .then(response => {
+      cb(response);
+    })
+    .catch(err => {
+      eb(err);
+    });
+  },
+  readFile: (path, cb, eb, sender_id) => {
+    OPENDOCUMENTS[sender_id].chroot.readFile(path)
+    .then(response => {
+      cb(response);
+    })
+    .catch(err => {
+      eb(err);
+    });
+  },
+  remove: (path, cb, eb, sender_id) => {
+    OPENDOCUMENTS[sender_id].chroot.remove(path)
+    .then(response => {
+      cb(response);
+    })
+    .catch(err => {
+      eb(err);
     });
   }
 };
