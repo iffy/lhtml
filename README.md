@@ -72,10 +72,10 @@ LHTML viewers provide a small JavaScript API to `index.html` files within the `L
 |---|---|
 | [`defaultSaver`](#defaultsaver) | The function that will be used for saving if `registerSaver` isn't called |
 | [`disableFormSaving()`](#disableformsaving) | Called to disable automatic form saving |
-| [`fs.listdir()`](#fs-listdir) | List contents of the zip |
-| [`fs.readFile(...)`](#fs-readfile) | Read a file from the document zip |
-| [`fs.remove(...)`](#fs-remove) | Remove a file/dir from the document zip |
-| [`fs.writeFile(...)`](#fs-writefile) | Overwrite a file within the document zip |
+| [`fs.listdir()`](#fslistdir) | List contents of the zip |
+| [`fs.readFile(...)`](#fsreadfile) | Read a file from the document zip |
+| [`fs.remove(...)`](#fsremove) | Remove a file/dir from the document zip |
+| [`fs.writeFile(...)`](#fswritefile) | Overwrite a file within the document zip |
 | [`on(...)`](#on) | Listen for events |
 | [`registerSaver(...)`](#registersaver) | Register a function to determine how the document is saved |
 | [`save()`](#save) | Programatically save the current document |
