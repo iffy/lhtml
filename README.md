@@ -70,42 +70,17 @@ LHTML viewers provide a small JavaScript API to `index.html` files within the `L
 
 | Function/Variable | Short description |
 |---|---|
-| [`defaultSaver`](#defaultsaver) | The function that will be used for saving if `registerSaver` isn't called |
-| [`disableFormSaving()`](#disableformsaving) | Called to disable automatic form saving |
 | [`fs.listdir()`](#fslistdir) | List contents of the zip |
 | [`fs.readFile(...)`](#fsreadfile) | Read a file from the document zip |
 | [`fs.remove(...)`](#fsremove) | Remove a file/dir from the document zip |
 | [`fs.writeFile(...)`](#fswritefile) | Overwrite a file within the document zip |
 | [`on(...)`](#on) | Listen for events |
-| [`registerSaver(...)`](#registersaver) | Register a function to determine how the document is saved |
-| [`save()`](#save) | Programatically save the current document |
-| [`setDocumentEdited(...)`](#setdocumentedited) | Indicate that there are changes to be saved |
-| [`suggestSize(...)`](#suggestsize) | Attempt to resize the document |
-
-### `defaultSaver`
-
-This is the saving function used by default (if none is provided by calling `registerSaver`).  It will take the current state of `index.html` and overwrite `index.html` within the LHTML zip.
-
-For usage, see `registerSaver`'s usage.
-
-### `disableFormSaving()`
-
-A common use case for LHTML files is to email a form to be filled out.  By default data entered into forms will be saved.  If you want to disable this (because you're using a framework like React or Angular) call `disableFormSaving()`.
-
-Usage:
-
-```html
-<body>
-    <!-- disable form saving -->
-    <script>window.LHTML && LHTML.disableFormSaving();</script>
-    Name: <input name="name">
-    Email: <input type="email" name="email">
-    Favorite color: <select>
-        <option>Red</option>
-        <option>Blue</option>
-    </select>
-</body>
-```
+| [`saving.defaultSaver`](#savingdefaultsaver) | The function that will be used for saving if `registerSaver` isn't called |
+| [`saving.disableFormSaving()`](#savingdisableformsaving) | Called to disable automatic form saving |
+| [`saving.registerSaver(...)`](#savingregistersaver) | Register a function to determine how the document is saved |
+| [`saving.save()`](#savingsave) | Programatically start saving the current document |
+| [`saving.setDocumentEdited(...)`](#savingsetdocumentedited) | Indicate that there are changes to be saved |
+| [`suggestSize(...)`](#suggestsize) | Attempt to resize the document's window |
 
 ### `fs.listdir()`
 
@@ -144,7 +119,7 @@ window.LHTML && LHTML.fs.readFile('something.txt').then(function(contents) {
 
 ### `fs.remove(...)`
 
-Delete a file/directory from the zipfile.  **You must call `save()` afterward if you want the deletion to be permanent.**
+Delete a file/directory from the zipfile.  **You must call `saving.save()` afterward if you want the deletion to be permanent.**
 
 Usage:
 
@@ -156,7 +131,7 @@ window.LHTML && LHTML.fs.remove('foo.txt').then(function() {
 
 ### `fs.writeFile(...)`
 
-Overwrite a file, creating it if necessary.  Also, any subdirectories needed will be created.  **You must call `save()` afterward if you want the writing to be permanent.**
+Overwrite a file, creating it if necessary.  Also, any subdirectories needed will be created.  **You must call `saving.save()` afterward if you want the writing to be permanent.**
 
 Usage:
 
@@ -182,11 +157,39 @@ window.LHTML && LHTML.on('saved', function() {
 })
 ```
 
-### `registerSaver(...)`
+### `saving.defaultSaver`
 
-`registerSaver(func)`
+This is the saving function used by default (if none is provided by calling `saving.registerSaver`).  It will take the current state of `index.html` and overwrite `index.html` within the LHTML zip.
 
-Registers a function to be called when the application is to be saved.  By default `LHTML.defaultSaver` is used.
+For usage, see `saving.registerSaver`'s usage.
+
+### `saving.disableFormSaving()`
+
+A common use case for LHTML files is to email a form to be filled out.  By default data entered into forms will be saved.  If you want to disable this (because you're using a framework like React or Angular) call `saving.disableFormSaving()`.
+
+Usage:
+
+```html
+<body>
+    <!-- disable form saving -->
+    <script>window.LHTML && LHTML.saving.disableFormSaving();</script>
+    Name: <input name="name">
+    Email: <input type="email" name="email">
+    Favorite color: <select>
+        <option>Red</option>
+        <option>Blue</option>
+    </select>
+</body>
+```
+
+
+### `saving.registerSaver(...)`
+
+`saving.registerSaver(func)`
+
+Registers a function to be called when the application is to be saved.  By default `saving.defaultSaver` is used.
+
+The registered function is expected to return on object whose keys are filenames and whose values are file contents.
 
 Usage:
 
@@ -194,33 +197,33 @@ Usage:
 <script>
 // Register a saver that will save index.html in its current state
 // and write some data to somedata.json within the LHTML zip.
-window.LHTML && LHTML.registerSaver(function() {
-    var files = LHTML.defaultSaver();
+window.LHTML && LHTML.saving.registerSaver(function() {
+    var files = LHTML.saving.defaultSaver();
     files['somedata.json'] = '{"foo": "bar"}';
     return files;
 })
 </script>
 ```
 
-### `save()`
+### `saving.save()`
 
-Saves the current file.  See `registerSaver` for more info.
+Saves the current file.  See `saving.registerSaver` for more info.
 
 Usage:
 
 ```html
 <script>
-window.LHTML && LHTML.save().then(function() {
+window.LHTML && LHTML.saving.save().then(function() {
     console.log('saved');
 })
 </script>
 ```
 
-### `setDocumentEdited(...)`
+### `saving.setDocumentEdited(...)`
 
-`setDocumentEdited(value)`
+`saving.setDocumentEdited(value)`
 
-If form-saving is enabled (which it is by default and unless `disableFormSaving()` is called) then document edited state is handled automatically.  This function is mostly useful for documents with form-saving disabled.
+If form-saving is enabled (which it is by default and unless `saving.disableFormSaving()` is called) then document edited state is handled automatically.  This function is mostly useful for documents with form-saving disabled.
 
 Calling this function sets the edited state of the current document.  Before closing an edited document, the application will prompt to save.  Set this to `true` to prevent closing without a prompt.  Set to `false` if there are no changes to be saved.
 
@@ -230,7 +233,7 @@ Usage:
 
 ```html
 <script>
-window.LHTML && LHTML.setDocumentEdited(true);
+window.LHTML && LHTML.saving.setDocumentEdited(true);
 </script>
 ```
 

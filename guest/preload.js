@@ -46,10 +46,14 @@ RPC.handlers = {
 //  Every function on LHTML is available to guest files.
 //----------------------------------------------------------------------------
 
+//---------------------------
+// Saving stuff
+//---------------------------
+LHTML.saving = {};
 //
 //  The default SAVER will emit the current content of the html page.
 //
-LHTML.defaultSaver = () => {
+LHTML.saving.defaultSaver = () => {
   // Thanks http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript/10162353#10162353
   let doctype = '';
   let node = document.doctype;
@@ -65,29 +69,40 @@ LHTML.defaultSaver = () => {
     'index.html': doctype + document.documentElement.outerHTML,
   };
 }
-
-let SAVER = LHTML.defaultSaver;
-
+let SAVER = LHTML.saving.defaultSaver;
 //
 //  Register the function to be called when the user requests to Save.
 //  The function should return an object with filenames as keys and contents
 //  as the value for any files that should be completely overwritten.
 //
-LHTML.registerSaver = (func) => {
+LHTML.saving.registerSaver = (func) => {
   SAVER = func;
 }
-
 //
 //  Save the current file.
 //
-LHTML.save = () => {
+LHTML.saving.save = () => {
   return RPC.call('save');
 }
-
-LHTML.setDocumentEdited = (edited) => {
+LHTML.saving.setDocumentEdited = (edited) => {
   return RPC.call('set_document_edited', !!edited);
 }
-
+//
+// form-saving default
+//
+let form_saving_enabled = true;
+LHTML.saving.disableFormSaving = () => {
+  form_saving_enabled = false;
+  formsaving.disable();
+}
+window.addEventListener('load', ev => {
+  if (form_saving_enabled) {
+    formsaving.enable();
+    formsaving.onChange((element, value) => {
+      LHTML.saving.setDocumentEdited(true);
+    })
+  }
+});
 
 //---------------------------
 // FileSystem stuff
@@ -121,7 +136,6 @@ LHTML.fs.listdir = (path) => {
   return RPC.call('listdir', path);
 }
 
-
 //
 //  Register something to handle events.
 //
@@ -134,23 +148,6 @@ LHTML.on = (event, handler) => {
   }
   EVENT_HANDLERS[event].push(handler);
 }
-
-//
-// form-saving default
-//
-let form_saving_enabled = true;
-LHTML.disableFormSaving = () => {
-  form_saving_enabled = false;
-  formsaving.disable();
-}
-window.addEventListener('load', ev => {
-  if (form_saving_enabled) {
-    formsaving.enable();
-    formsaving.onChange((element, value) => {
-      LHTML.setDocumentEdited(true);
-    })
-  }
-});
 
 //
 // Suggest that the document be of a certain size (in pixels)

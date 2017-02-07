@@ -4,7 +4,7 @@
 <body>
 Test page.
 <script>
-window.LHTML && LHTML.disableFormSaving();
+window.LHTML && LHTML.saving.disableFormSaving();
 if (LHTML) {
   console.log('LHTML exists');
   LHTML.on('saved', (data) => {
