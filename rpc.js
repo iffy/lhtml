@@ -54,23 +54,28 @@ class RPCService {
         error: 'No such method: ' + message.method,
       })
     } else {
-      handler(
-        message.params,
-        (result) => {
-          console.log(`RPC[${message.id}] result:`, result);
-          receiver.send('rpc-response', {
-            id: message.id,
-            result: result,
-          })
-        },
-        (error) => {
-          console.log(`RPC[${message.id}] error:`, error);
-          receiver.send('rpc-response', {
-            id: message.id,
-            error: error,
-          })
-        },
-        message.sender_id);
+      let ctx = {
+        sender_id: message.sender_id,
+      }
+      let response;
+      try {
+        response = Promise.resolve(handler(ctx, message.params))
+      } catch(err) {
+        response = Promise.reject(err);
+      }
+      return response.then((result) => {
+        console.log(`RPC[${message.id}] result:`, result);
+        receiver.send('rpc-response', {
+          id: message.id,
+          result: result,
+        })
+      }, (error) => {
+        console.log(`RPC[${message.id}] error:`, error);
+        receiver.send('rpc-response', {
+          id: message.id,
+          error: error,
+        })
+      })
     }
   }
   response_received(event, response) {

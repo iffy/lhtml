@@ -590,25 +590,22 @@ function currentDocument() {
 let RPC = new RPCService(ipcMain);
 RPC.listen();
 RPC.handlers = {
-  echo: (data, cb, eb) => {
-    cb('echo: ' + data);
+  echo: (ctx, data) => {
+    return 'echo: ' + data;
   },
-  save: (data, cb, eb, sender_id) => {
-    let window_id = OPENDOCUMENTS[sender_id].window_id;
+  save: (ctx, data) => {
+    let window_id = OPENDOCUMENTS[ctx.sender_id].window_id;
     let win = BrowserWindow.fromId(window_id);
-    Promise.resolve(_saveDoc(win))
-      .then(response => {
-        cb(response);
-      })
+    return _saveDoc(win);
   },
-  set_document_edited: (edited, cb, eb, sender_id) => {
-    let window_id = OPENDOCUMENTS[sender_id].window_id;
+  set_document_edited: (ctx, edited) => {
+    let window_id = OPENDOCUMENTS[ctx.sender_id].window_id;
     let win = BrowserWindow.fromId(window_id);
     win.setDocumentEdited(edited);
-    cb(edited);
+    return edited;
   },
-  suggest_size: (size, cb, eb, sender_id) => {
-    let window_id = OPENDOCUMENTS[sender_id].window_id;
+  suggest_size: (ctx, size) => {
+    let window_id = OPENDOCUMENTS[ctx.sender_id].window_id;
     let win = BrowserWindow.fromId(window_id);
     let current = win.getSize();
 
@@ -636,46 +633,22 @@ RPC.handlers = {
     win.throttledSetSize(newsize.width, newsize.height);
 
     current = win.getSize();
-    cb({
+    return {
       width: current[0],
       height: current[1],
-    });
+    };
   },
-  listdir: (path, cb, eb, sender_id) => {
-    OPENDOCUMENTS[sender_id].chroot.listdir(path)
-    .then(items => {
-      cb(items);
-    })
-    .catch(err => {
-      eb(err);
-    });
+  listdir: (ctx, path) => {
+    return OPENDOCUMENTS[ctx.sender_id].chroot.listdir(path);
   },
-  writeFile: (ctx, cb, eb, sender_id) => {
-    OPENDOCUMENTS[sender_id].chroot.writeFile(ctx.path, ctx.data)
-    .then(response => {
-      cb(response);
-    })
-    .catch(err => {
-      eb(err);
-    });
+  writeFile: (ctx, params) => {
+    return OPENDOCUMENTS[ctx.sender_id].chroot.writeFile(params.path, params.data);
   },
-  readFile: (path, cb, eb, sender_id) => {
-    OPENDOCUMENTS[sender_id].chroot.readFile(path)
-    .then(response => {
-      cb(response);
-    })
-    .catch(err => {
-      eb(err);
-    });
+  readFile: (ctx, path) => {
+    return OPENDOCUMENTS[ctx.sender_id].chroot.readFile(path);
   },
-  remove: (path, cb, eb, sender_id) => {
-    OPENDOCUMENTS[sender_id].chroot.remove(path)
-    .then(response => {
-      cb(response);
-    })
-    .catch(err => {
-      eb(err);
-    });
+  remove: (ctx, path) => {
+    return OPENDOCUMENTS[ctx.sender_id].chroot.remove(path);
   }
 };
 
