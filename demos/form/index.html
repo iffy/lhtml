@@ -4,11 +4,10 @@
   <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection">
 </head>
 <body>
-  <script>window.LHTML && LHTML.enableFormSaving();</script>
   <script>
   function save() {
     if (window.LHTML) {
-      LHTML.save()
+      LHTML.saving.save()
         .then(function() {
           Materialize.toast('Document saved', 4000);
         })
