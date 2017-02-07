@@ -464,10 +464,22 @@ function _unzip(path) {
 }
 
 function openPath(path) {
+  // Is it already opened?
+  let existing = _(OPENDOCUMENTS)
+    .values()
+    .filter(doc_info => {
+      return doc_info.original_path === path;
+    })
+    .first();
+  if (existing) {
+    BrowserWindow.fromId(existing.window_id).focus();
+    return;
+  }
   var dirPath;
   let ident = randomIdentifier();
   let doc_info = {
     id: ident,
+    original_path: path,
   };
   if (fs.lstatSync(path).isFile()) {
     try {
