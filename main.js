@@ -307,6 +307,9 @@ function createLHTMLWindow() {
   })
   win.on('closed', () => {
     let doc_info = WINDOW2DOC_INFO[win_id];
+    if (!doc_info) {
+      return;
+    }
     if (doc_info.tmpdir) {
       fs.remove(doc_info.dir, (error) => {
         if (error) {
@@ -461,28 +464,27 @@ function _unzip(path) {
 }
 
 function openPath(path) {
-  // Open a new window
-  let win = createLHTMLWindow();
-
   var dirPath;
   let ident = randomIdentifier();
   let doc_info = {
     id: ident,
-    window_id: win.id,
   };
   if (fs.lstatSync(path).isFile()) {
-    if (path.endsWith('.lhtml')) {
-      // zipped directory.
-      _.merge(doc_info, _unzip(path));
-    } else {
-      // unknown file type
-      throw new Error('unknown file type');
+    try {
+      _.merge(doc_info, _unzip(path));  
+    } catch (err) {
+      dialog.showErrorBox("Error opening file", "Filename: " + path + "\n\n" + err);
+      return;
     }
   } else {
     // Open expanded directory
     doc_info.dir = path;
   }
   doc_info.chroot = new ChrootFS(doc_info.dir);
+
+  // Open a new window
+  let win = createLHTMLWindow();
+  doc_info.window_id = win.id;
 
   WINDOW2DOC_INFO[win.id] = OPENDOCUMENTS[ident] = doc_info;
   var url = `lhtml://${ident}/index.html`;
