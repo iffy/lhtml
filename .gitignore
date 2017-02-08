@@ -1,4 +1,4 @@
 node_modules/
 dist/
 samples/filesystem/thedate.txt
-doc
+.DS_Store

@@ -4,6 +4,7 @@ See LICENSE for details.
 -->
 
 [![Build Status](https://travis-ci.org/iffy/lhtml.svg?branch=master)](https://travis-ci.org/iffy/lhtml)
+![LHTML](doc/icon.png)
 
 # LHTML
 
