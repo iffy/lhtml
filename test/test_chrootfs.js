@@ -3,7 +3,7 @@ var fs = require('fs-extra');
 var Path = require('path');
 const _ = require('lodash');
 const Tmp = require('tmp');
-const {ChrootFS, TooBigError} = require('../chrootfs.js');
+const {ChrootFS, safe_join, TooBigError} = require('../chrootfs.js');
 
 
 describe('ChrootFS', function() {
@@ -185,4 +185,88 @@ describe('ChrootFS', function() {
         });
     });
   })
-})
+});
+
+
+describe('safe_join', function() {
+  describe("non-existant paths", function() {
+    it("Doesn't allow ..", () => {
+      return safe_join('/foo/bar', '../hey')
+      .then(() => {
+        assert.equal(true, false, "Should not succeed");
+      }, (err) => {
+        assert.equal(true, true, "Should have failed");
+      })
+    });
+    it("Allows / to be the root", () => {
+      return safe_join('/foo/bar', '/hey')
+      .then((result) => {
+        assert.equal(result, "/foo/bar/hey");
+      });
+    });
+    it("allows normal paths", () => {
+      return safe_join('/foo/bar', 'hope')
+      .then((result) => {
+        assert.equal(result, "/foo/bar/hope");
+      });
+    });
+  });
+
+  describe("existing root", function() {
+    let tmpdir;
+    let r_tmpdir;
+    beforeEach(() => {
+      tmpdir = Tmp.dirSync().name;
+      return new Promise((resolve, reject) => {
+        fs.realpath(tmpdir, (err, resolvedPath) => {
+          r_tmpdir = resolvedPath;
+          resolve(r_tmpdir);
+        });
+      })
+    });
+    afterEach(() => {
+      return fs.remove(tmpdir)
+    });
+
+    describe("non-existant children", function() {
+      it("Doesn't allow ..", () => {
+        return safe_join(tmpdir, '../hey')
+        .then(() => {
+          assert.equal(true, false, "Should not succeed");
+        }, (err) => {
+          assert.equal(true, true, "Should have failed");
+        })
+      });
+      it("Allows / to be the root", () => {
+        return safe_join(tmpdir, '/hey')
+        .then((result) => {
+          assert.equal(result, tmpdir + Path.sep + "hey");
+        });
+      });
+      it("allows normal paths", () => {
+        return safe_join(tmpdir, 'hope')
+        .then((result) => {
+          assert.equal(result, tmpdir + Path.sep + "hope");
+        });
+      });
+    });
+
+    describe("existing children", function() {
+      beforeEach(() => {
+        fs.writeFileSync(Path.join(tmpdir, 'a.txt'), 'a contents');
+      })
+      it("Allows / to be the root", () => {
+        return safe_join(tmpdir, '/a.txt')
+        .then((result) => {
+          assert.equal(result, tmpdir + Path.sep + "a.txt");
+        });
+      });
+      it("allows normal paths", () => {
+        return safe_join(tmpdir, 'a.txt')
+        .then((result) => {
+          assert.equal(result, tmpdir + Path.sep + "a.txt");
+        });
+      });
+    });
+  });
+});

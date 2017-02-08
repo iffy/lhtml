@@ -11,7 +11,7 @@ const _ = require('lodash');
 const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const log = require('electron-log');
-const {ChrootFS} = require('./chrootfs.js');
+const {safe_join, ChrootFS} = require('./chrootfs.js');
 
 
 let template = [{
@@ -336,17 +336,6 @@ function randomIdentifier() {
   });
 };
 
-function safe_join(base, part) {
-  var path = fs.realpathSync(Path.normalize(`${base}/${part}`));
-  var base = fs.realpathSync(base);
-
-  if (path.indexOf(base) === 0) {
-    return path;
-  } else {
-    throw new Error('a fit');
-  }
-}
-
 let OPENDOCUMENTS = {};
 let WINDOW2DOC_INFO = {};
 
@@ -369,9 +358,9 @@ app.on('ready', function() {
     const domain = parsed.host;
     const path = parsed.path;
     const root_dir = OPENDOCUMENTS[domain].dir;
-    const file_path = safe_join(root_dir, path);
-
-    callback({path: file_path});
+    safe_join(root_dir, path).then(file_path => {
+      callback({path: file_path});
+    });
   }, (error) => {
     if (error) {
       throw new Error('failed to register lhtml protocol');
@@ -521,21 +510,27 @@ function _saveDoc(win) {
   return RPC.call('get_save_data', null, guest)
     .then((save_data) => {
       let doc_info = WINDOW2DOC_INFO[win.id];
-      _.each(save_data, (guts, filename) => {
-        var full_path = safe_join(doc_info.dir, filename);
-        fs.writeFileSync(full_path, guts);
+      let saves = _.map(save_data, (guts, filename) => {
+        return safe_join(doc_info.dir, filename)
+        .then(full_path => {
+          fs.writeFileSync(full_path, guts);
+        })
       });
 
-      // Overwrite original zip, if it's a zip
-      if (doc_info.zip) {
-        var zip = new AdmZip();
-        zip.addLocalFolder(doc_info.dir, '.');
-        zip.writeZip(doc_info.zip);
-      }
-      log.info('saved');
-      win.setDocumentEdited(false);
-      RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
-      return null;
+      console.log('saves', saves);
+
+      return Promise.all(saves)
+      .then(result => {
+        // Overwrite original zip, if it's a zip
+        if (doc_info.zip) {
+          var zip = new AdmZip();
+          zip.addLocalFolder(doc_info.dir, '.');
+          zip.writeZip(doc_info.zip);
+        }
+        log.info('saved');
+        win.setDocumentEdited(false);
+        RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);  
+      })
     });
 }
 

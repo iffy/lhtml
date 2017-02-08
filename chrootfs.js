@@ -12,7 +12,7 @@ class CBPromise {
   }
 }
 
-class OutsideChrootError extends Error {}
+class UnsafePath extends Error {}
 class TooBigError extends Error {}
 
 // Get the current size being taken by a directory.
@@ -69,52 +69,13 @@ class ChrootFS {
       })
     }
   }
-  _isWithin(root, child) {
-    // Return true if child path string is a child of root path string
-    // This just does string comparison.
-    if (root === child || (root + Path.sep) === child || root === (child + Path.sep)) {
-      return true;
-    } else if (child.startsWith(root + Path.sep)) {
-      return true;
-    } else {
-      return false
-    }
-  }
   _getPath(relpath) {
     // Turn a path relative to the root of the chroot
     // into an absolute-to-the-filesystem path.
-    // Throws a OutsideChrootError if the path is outside the chroot.
+    // Throws a UnsafePath if the path is outside the chroot.
     return this._getRoot()
     .then(root => {
-      let cautionarypath = Path.resolve(this._root, Path.normalize(relpath));
-      if (!this._isWithin(this._root, cautionarypath)) {
-        return Promise.reject(new OutsideChrootError(relpath));
-      } else {
-        // cautionarypath is definitely inside _root, but let's make
-        // sure it's not a symlink pointing outside root.
-        return new Promise((resolve, reject) => {
-          fs.realpath(cautionarypath, (err, resolvedPath) => {
-            if (err) {
-              if (err.code === "ENOENT") {
-                // file doesn't exist
-                // Since this file doesn't exist and we already know
-                // the path is within the _root, it's safe
-                resolve(cautionarypath);
-              } else {
-                console.log('unknown err.code', err.code);
-                console.log('err', err);
-                reject(err);
-              }
-            } else {
-              if (this._isWithin(this._root, resolvedPath)) {
-                resolve(resolvedPath);
-              } else {
-                reject(new OutsideChrootError(relpath));
-              }
-            }
-          });
-        });
-      }
+      return safe_join(root, relpath);
     });
   }
   writeFile(path, data) {
@@ -217,5 +178,85 @@ class ChrootFS {
   }
 }
 
+function is_string_path_within(root, child) {
+  // Return true if absolute child path string is a child of absolute root path string
+  // This just does string comparison.
+  // You are expected to make root and child absolute.
+  if (root === child || (root + Path.sep) === child || root === (child + Path.sep)) {
+    return true;
+  } else if (child.startsWith(root + Path.sep)) {
+    return true;
+  } else {
+    return false
+  }
+}
 
-module.exports = {ChrootFS, TooBigError};
+function resolve_path(x) {
+  return new Promise((resolve, reject) => {  
+    fs.realpath(x, (err, resolvedPath) => {
+      if (err) {
+        if (err.code === "ENOENT") {
+          // file does not exist
+          resolve({
+            exists: false,
+            path: x,
+            orig: x,
+          });
+        } else {
+          // some other error
+          reject(err);
+        }
+      } else {
+        // file exists
+        resolve({
+          exists: true,
+          path: resolvedPath,
+          orig: x,
+        });
+      }
+    })
+  });
+}
+
+
+function safe_join() {
+  let base = Path.normalize(arguments[0]);
+  let rest = [].slice.call(arguments).slice(1);
+
+  // Resolve the relative path
+  rest = Path.normalize(Path.join(...rest));
+  if (Path.isAbsolute(rest)) {
+    rest = Path.relative(Path.dirname(rest), rest);
+  }
+  let alleged_path = Path.resolve(base, rest);
+
+  let resolved_path = resolve_path(alleged_path);
+  let resolved_base = resolve_path(base);
+
+  return Promise.all([resolved_base, resolved_path])
+  .then(result => {
+    let r_base = result[0];
+    let r_path = result[1];
+    if (r_base.exists) {
+      if (r_path.exists) {
+        if (is_string_path_within(r_base.path, r_path.path)) {
+          return r_path.orig;
+        }
+      } else {
+        if (is_string_path_within(r_base.orig, r_path.path)
+          || is_string_path_within(r_base.path, r_path.path)) {
+          return r_path.path;
+        }
+      }
+    } else {
+      // root doesn't exist
+      if (is_string_path_within(r_base.path, r_path.path)) {
+        return r_path.path;
+      }
+    }
+    throw new UnsafePath(r_path.orig + ' is outside base dir.');
+  });
+}
+
+
+module.exports = {ChrootFS, TooBigError, safe_join};
