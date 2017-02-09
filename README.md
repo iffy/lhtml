@@ -269,6 +269,7 @@ Security of LHTML hasn't yet been fully vetted.  Some precautions have been take
 - Access to `file://` resources is forbidden to documents.
 - Access to `https?://` resources is forbidden to documents.
 - Documents shouldn't be able to open new windows (need to verify this for all cases), so they can't open fake system dialogs, hopefully.
+- Documents are limited in size (currently hard-coded at 10MB, but with plans to make it configurable) to prevent documents from filling up hard drives
 
 Insecurish things:
 
