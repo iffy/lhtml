@@ -124,12 +124,12 @@ if (process.platform === 'darwin') {
         label: 'About ' + name,
         role: 'about'
       },
-      // {
-      //   label: 'Check for updates...',
-      //   click() {
-      //     promptForUpdate();
-      //   },
-      // },
+      {
+        label: 'Check for updates...',
+        click() {
+          promptForUpdate();
+        },
+      },
       {type: 'separator'},
       {
         label: 'Services',
@@ -186,85 +186,83 @@ function createDefaultWindow() {
 //-------------------------------------------------------------------
 // Auto updates
 //-------------------------------------------------------------------
-// We don't get auto-update on macOS until we pay to sign the code
-// So, until then, this code goes away.
-// var {autoUpdater} = require("electron-updater");
-// let UPDATE_DOWNLOADED = false;
-// let update_window;
+var {autoUpdater} = require("electron-updater");
+let UPDATE_DOWNLOADED = false;
+let update_window;
 
-// autoUpdater.logger = log;
-// autoUpdater.logger.transports.file.level = 'info';
-// autoUpdater.on('checking-for-update', (ev) => {
-//   sendToUpdateWindow('checking-for-update');
-// })
-// autoUpdater.on('update-available', (ev) => {
-//   sendToUpdateWindow('update-available');
-// })
-// autoUpdater.on('update-not-available', (ev) => {
-//   sendToUpdateWindow('update-not-available');
-// })
-// autoUpdater.on('error', (ev) => {
-//   sendToUpdateWindow('error');
-// })
-// autoUpdater.on('download-progress', (ev) => {
-// })
-// autoUpdater.on('update-downloaded', (ev, releaseNotes, releaseName, releaseDate, updateURL) => {
-//   UPDATE_DOWNLOADED = releaseName;
-//   promptForUpdate();
-// })
-// ipcMain.on('do-update', () => {
-//   if (UPDATE_DOWNLOADED) {
-//     autoUpdater.quitAndInstall();
-//   }
-// });
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+autoUpdater.on('checking-for-update', (ev) => {
+  sendToUpdateWindow('checking-for-update');
+})
+autoUpdater.on('update-available', (ev) => {
+  sendToUpdateWindow('update-available');
+})
+autoUpdater.on('update-not-available', (ev) => {
+  sendToUpdateWindow('update-not-available');
+})
+autoUpdater.on('error', (ev) => {
+  sendToUpdateWindow('error');
+})
+autoUpdater.on('download-progress', (ev) => {
+})
+autoUpdater.on('update-downloaded', (ev, releaseNotes, releaseName, releaseDate, updateURL) => {
+  UPDATE_DOWNLOADED = releaseName;
+  promptForUpdate();
+})
+ipcMain.on('do-update', () => {
+  if (UPDATE_DOWNLOADED) {
+    autoUpdater.quitAndInstall();
+  }
+});
 
-// if (process.env.CHECK_FOR_UPDATES === "no") {
-//   console.log('UPDATE CHECKING DISABLED');
-// } else {
-//   autoUpdater.checkForUpdates()
-//   .then(result => {
-//     console.log('check for updates result', result);
-//   })
-//   .catch(err => {
-//     console.log('Error checking for update');
-//   })
-// }
+if (process.env.CHECK_FOR_UPDATES === "no") {
+  console.log('UPDATE CHECKING DISABLED');
+} else {
+  autoUpdater.checkForUpdates()
+  .then(result => {
+    console.log('check for updates result', result);
+  })
+  .catch(err => {
+    console.log('Error checking for update');
+  })
+}
 
-// function promptForUpdate() {
-//   if (update_window) {
-//     // already exists
-//     if (UPDATE_DOWNLOADED) {
-//       update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
-//     }
-//     return;
-//   }
-//   update_window = new BrowserWindow({
-//     titleBarStyle: 'hidden',
-//     x: 0,
-//     y: 10,
-//     width: 400,
-//     height: 200,
-//     resizable: false,
-//     show: false,
-//   });
-//   update_window.on('ready-to-show', () => {
-//     update_window.show();
-//     if (UPDATE_DOWNLOADED) {
-//       update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
-//     }
-//   })
-//   update_window.on('closed', () => {
-//     update_window = null;
-//   });
-//   update_window.loadURL(`file://${__dirname}/updates.html?version=v${app.getVersion()}`);
-//   return update_window;
-// }
+function promptForUpdate() {
+  if (update_window) {
+    // already exists
+    if (UPDATE_DOWNLOADED) {
+      update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
+    }
+    return;
+  }
+  update_window = new BrowserWindow({
+    titleBarStyle: 'hidden',
+    x: 0,
+    y: 10,
+    width: 400,
+    height: 200,
+    resizable: false,
+    show: false,
+  });
+  update_window.on('ready-to-show', () => {
+    update_window.show();
+    if (UPDATE_DOWNLOADED) {
+      update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
+    }
+  })
+  update_window.on('closed', () => {
+    update_window = null;
+  });
+  update_window.loadURL(`file://${__dirname}/updates.html?version=v${app.getVersion()}`);
+  return update_window;
+}
 
-// function sendToUpdateWindow(name, data) {
-//   if (update_window) {
-//     update_window.webContents.send(name, data);
-//   }
-// }
+function sendToUpdateWindow(name, data) {
+  if (update_window) {
+    update_window.webContents.send(name, data);
+  }
+}
 
 function createLHTMLWindow() {
   let win = new BrowserWindow({
