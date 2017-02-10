@@ -182,12 +182,11 @@ function is_string_path_within(root, child) {
   // Return true if absolute child path string is a child of absolute root path string
   // This just does string comparison.
   // You are expected to make root and child absolute.
-  if (root === child || (root + Path.sep) === child || root === (child + Path.sep)) {
-    return true;
-  } else if (child.startsWith(root + Path.sep)) {
-    return true;
+  let relative = Path.relative(root, child);
+  if (relative.startsWith('..')) {
+    return false;
   } else {
-    return false
+    return true;
   }
 }
 
@@ -226,7 +225,7 @@ function safe_join() {
   // Resolve the relative path
   rest = Path.normalize(Path.join(...rest));
   if (Path.isAbsolute(rest)) {
-    rest = Path.relative(Path.dirname(rest), rest);
+    rest = Path.relative('/', rest);
   }
   let alleged_path = Path.resolve(base, rest);
 

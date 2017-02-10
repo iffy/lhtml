@@ -189,6 +189,13 @@ describe('ChrootFS', function() {
 
 
 describe('safe_join', function() {
+  it("/ as child", () => {
+    return safe_join('/Users/matt/a/b/c', '/js/lodash.min.js')
+    .then(result => {
+      assert.equal(result, '/Users/matt/a/b/c/js/lodash.min.js');
+    })
+  });
+
   describe("non-existant paths", function() {
     it("Doesn't allow ..", () => {
       return safe_join('/foo/bar', '../hey')
