@@ -216,9 +216,7 @@ ipcMain.on('do-update', () => {
   }
 });
 
-if (process.env.CHECK_FOR_UPDATES === "no") {
-  console.log('UPDATE CHECKING DISABLED');
-} else {
+function checkForUpdates() {
   autoUpdater.checkForUpdates()
   .then(result => {
     console.log('check for updates result', result);
@@ -228,11 +226,22 @@ if (process.env.CHECK_FOR_UPDATES === "no") {
   })
 }
 
+if (process.env.CHECK_FOR_UPDATES === "no") {
+  console.log('UPDATE CHECKING DISABLED');
+} else {
+  // Check for updates after a few seconds.
+  setTimeout(() => {
+    checkForUpdates();
+  }, 5000);
+}
+
 function promptForUpdate() {
   if (update_window) {
     // already exists
     if (UPDATE_DOWNLOADED) {
       update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
+    } else {
+      checkForUpdates();
     }
     return;
   }
@@ -249,6 +258,8 @@ function promptForUpdate() {
     update_window.show();
     if (UPDATE_DOWNLOADED) {
       update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
+    } else {
+      checkForUpdates();
     }
   })
   update_window.on('closed', () => {
