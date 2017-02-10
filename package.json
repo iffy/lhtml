@@ -8,10 +8,6 @@
     "name": "Matt Haggard",
     "email": "haggardii@gmail.com"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/iffy/lhtml.git"
-  },
   "scripts": {
     "test": "mocha",
     "pack": "build --dir",
@@ -19,9 +15,9 @@
     "postinstall": "install-app-deps"
   },
   "devDependencies": {
-    "electron-builder": "^12.3.0",
+    "electron-builder": "^12.3.1",
     "electron-packager": "^8.5.0",
-    "electron-prebuilt": "^1.4.13",
+    "electron": "^1.4.15",
     "esdoc": "^0.5.2",
     "http-server": "^0.9.0",
     "mocha": "^3.2.0",
@@ -38,13 +34,6 @@
   },
   "build": {
     "appId": "com.github.iffy.lhtml",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "iffy",
-        "repo": "lhtml"
-      }
-    ],
     "mac": {
       "category": "your.app.category.type",
       "target": [
@@ -52,7 +41,6 @@
         "dmg"
       ]
     },
-    "dmg": {},
     "fileAssociations": [
       {
         "ext": "lhtml",
