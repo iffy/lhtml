@@ -113,7 +113,7 @@ class ChrootFS {
     return this._getPath(path)
     .then(abspath => {
       return new Promise((resolve, reject) => {
-        fs.readFile(abspath, (err, data) => {
+        fs.readFile(abspath, 'utf8', (err, data) => {
           if (err) {
             reject(err);
           } else {
