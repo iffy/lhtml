@@ -26,6 +26,7 @@ describe('ChrootFS', function() {
       })
       .then(contents => {
         assert.equal(contents, 'some contents');
+        assert.equal(typeof contents, 'string');
       });
     });
 
