@@ -10,5 +10,6 @@ node_js:
 script: ./test/travis-build.sh
 
 cache:
+  yarn: true
   directories:
     - node_modules

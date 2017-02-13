@@ -279,7 +279,7 @@ Insecurish things:
 
 To run the application in development mode do:
 
-    npm install
+    yarn install
     node_modules/.bin/electron .
 
 # Packaging

@@ -8,7 +8,8 @@ fi
 
 echo "node $(node --version)"
 echo "npm $(npm --version)"
+echo "yarn $(yarn --version)"
 
-npm install
+yarn install
 export CHECK_FOR_UPDATES="no"
-npm test
+yarn test
