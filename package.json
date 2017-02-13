@@ -1,7 +1,7 @@
 {
   "name": "lhtml",
   "productName": "LHTML",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "main": "main.js",
   "description": "LHTML Viewer",
   "author": "Matt Haggard <haggardii@gmail.com>",
