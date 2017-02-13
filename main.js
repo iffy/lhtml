@@ -14,6 +14,9 @@ const log = require('electron-log');
 const {safe_join, ChrootFS} = require('./chrootfs.js');
 const {autoUpdater} = require("electron-updater");
 
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+
 log.info('LHTML starting...');
 
 let template = [{
@@ -191,8 +194,6 @@ function createDefaultWindow() {
 let UPDATE_DOWNLOADED = false;
 let update_window;
 
-autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = 'info';
 autoUpdater.on('checking-for-update', (ev) => {
   sendToUpdateWindow('checking-for-update');
 })
