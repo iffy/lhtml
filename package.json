@@ -4,10 +4,7 @@
   "version": "0.3.2",
   "main": "main.js",
   "description": "LHTML Viewer",
-  "author": {
-    "name": "Matt Haggard",
-    "email": "haggardii@gmail.com"
-  },
+  "author": "Matt Haggard <haggardii@gmail.com>",
   "scripts": {
     "test": "mocha",
     "pack": "build --dir",
@@ -15,9 +12,9 @@
     "postinstall": "install-app-deps"
   },
   "devDependencies": {
+    "electron": "^1.6.0",
     "electron-builder": "^13.6.0",
     "electron-packager": "^8.5.0",
-    "electron": "^1.6.0",
     "esdoc": "^0.5.2",
     "http-server": "^0.9.0",
     "mocha": "^3.2.0",
@@ -58,5 +55,7 @@
     "nsis": {
       "perMachine": true
     }
-  }
+  },
+  "repository": "git@github.com:iffy/lhtml.git",
+  "license": "Apache-2.0"
 }
