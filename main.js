@@ -1,7 +1,8 @@
 // Copyright (c) The LHTML team
 // See LICENSE for details.
 
-const {ipcMain, dialog, app, BrowserWindow, Menu, protocol, webContents} = require('electron');
+const {ipcMain, dialog, app, BrowserWindow, Menu, protocol, webContents, net} = require('electron');
+const {session} = require('electron');
 var electron = require('electron');
 const Path = require('path');
 const fs = require('fs-extra');
@@ -221,20 +222,11 @@ ipcMain.on('do-update', () => {
 function checkForUpdates() {
   autoUpdater.checkForUpdates()
   .then(result => {
-    console.log('check for updates result', result);
+    log.debug('check for updates result', result);
   })
   .catch(err => {
-    console.log('Error checking for update');
+    log.debug('Error checking for update');
   })
-}
-
-if (process.env.CHECK_FOR_UPDATES === "no") {
-  console.log('UPDATE CHECKING DISABLED');
-} else {
-  // Check for updates after a few seconds.
-  setTimeout(() => {
-    checkForUpdates();
-  }, 5000);
 }
 
 function promptForUpdate() {
@@ -278,6 +270,7 @@ function sendToUpdateWindow(name, data) {
 }
 
 function createLHTMLWindow() {
+  // Create a session with network access disabled
   let win = new BrowserWindow({
     width: 800,
     height: 600,
@@ -324,7 +317,7 @@ function createLHTMLWindow() {
     if (doc_info.tmpdir) {
       fs.remove(doc_info.dir, (error) => {
         if (error) {
-          console.error('Error deleting tmpdir:', error);
+          log.error('Error deleting tmpdir:', error);
         }
       });
     }
@@ -362,9 +355,19 @@ app.on('open-file', function(event, path) {
   event.preventDefault();
 })
 
+
 app.on('ready', function() {
+  // Updates
+  if (process.env.CHECK_FOR_UPDATES === "no") {
+    log.info('UPDATE CHECKING DISABLED');
+  } else {
+    checkForUpdates();
+  }
+
+  let sesh = session.fromPartition('persist:webviews');
+
   // Handle lhtml://<path>
-  protocol.registerFileProtocol('lhtml', (request, callback) => {
+  sesh.protocol.registerFileProtocol('lhtml', (request, callback) => {
     const parsed = URL.parse(request.url);
     const domain = parsed.host;
     const path = parsed.path;
@@ -378,21 +381,16 @@ app.on('ready', function() {
     }
   })
 
-  // Disable http:// requests until we can figure out a secure
-  // way to do it.
-  let dropRequest = (request, callback) => {
-    callback(null);
-  };
-  protocol.interceptHttpProtocol('http', dropRequest, (error) => {
-    if (error) {
-      throw new Error('failed to register http protocol');
+  // Disable networking for webviews
+  sesh.webRequest.onBeforeRequest((details, callback) => {
+    if (details.url.startsWith('lhtml://')) {
+      // only lhtml requests are allowed
+      callback({})
+    } else {
+      log.debug(`Document attempted ${details.method} ${details.url}`);
+      callback({cancel: true});  
     }
-  });
-  protocol.interceptHttpProtocol('https', dropRequest, (error) => {
-    if (error) {
-      throw new Error('failed to register https protocol');
-    }
-  });
+  })
 
   // Menu
   const menu = Menu.buildFromTemplate(template);
@@ -528,7 +526,6 @@ function _saveDoc(win) {
         })
       });
 
-      console.log('saves', saves);
 
       return Promise.all(saves)
       .then(result => {
@@ -575,7 +572,7 @@ function saveAsFocusedDoc() {
       if (doc_info.tmpdir) {
         fs.remove(doc_info.dir, (error) => {
           if (error) {
-            console.error('Error deleting tmpdir:', error);
+            log.error('Error deleting tmpdir:', error);
           }
         });
       }

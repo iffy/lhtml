@@ -1,7 +1,7 @@
 {
   "name": "lhtml",
   "productName": "LHTML",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "main": "main.js",
   "description": "LHTML Viewer",
   "author": {
@@ -34,7 +34,6 @@
   },
   "build": {
     "appId": "com.github.iffy.lhtml",
-    "productName": "lhtml",
     "mac": {
       "category": "your.app.category.type",
       "target": [

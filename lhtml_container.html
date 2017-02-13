@@ -15,24 +15,13 @@ See LICENSE for details.
     </style>
   </head>
   <body>
-    <webview id="theview" autosize="on" disableguestresize style="width: 100vw; height: 100vh;" preload="./guest/preload.js"></webview>
+    <webview id="theview" autosize="on" disableguestresize style="width: 100vw; height: 100vh;" partition="persist:webviews" preload="./guest/preload.js"></webview>
 <script>
 const {ipcRenderer} = require('electron');
 
 onload = () => {
   const webview = document.getElementById('theview');
-  const loadstart = () => {
-    console.log('load start');
-  }
-  const loadstop = () => {
-    console.log('load stop');
-  }
-  webview.addEventListener('did-start-loading', loadstart);
-  webview.addEventListener('did-stop-loading', loadstop);
-  webview.addEventListener('page-title-updated', (title, explicitSet) => {
-    document.title = webview.getTitle();
-  })
-
+  
   // Handle main -> guest communication
   ipcRenderer.on('rpc', (event, message) => {
     console.log('rpc passthru', message);
@@ -42,6 +31,19 @@ onload = () => {
   // Toggle Dev Tools
   ipcRenderer.on('toggleDevTools', (event) => {
     webview.getWebContents().toggleDevTools();
+  })
+
+  const loadstart = () => {
+    console.log('load start');
+
+  }
+  const loadstop = () => {
+    console.log('load stop');
+  }
+  webview.addEventListener('did-start-loading', loadstart);
+  webview.addEventListener('did-stop-loading', loadstop);
+  webview.addEventListener('page-title-updated', (title, explicitSet) => {
+    document.title = webview.getTitle();
   })
 
   // Open...
