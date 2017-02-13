@@ -12,7 +12,9 @@ const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const log = require('electron-log');
 const {safe_join, ChrootFS} = require('./chrootfs.js');
+const {autoUpdater} = require("electron-updater");
 
+log.info('LHTML starting...');
 
 let template = [{
   label: 'File',
@@ -186,7 +188,6 @@ function createDefaultWindow() {
 //-------------------------------------------------------------------
 // Auto updates
 //-------------------------------------------------------------------
-var {autoUpdater} = require("electron-updater");
 let UPDATE_DOWNLOADED = false;
 let update_window;
 
