@@ -47,6 +47,9 @@ See LICENSE for details.
   #do-update-btn:hover {
     box-shadow: 0px 0px 5px green;
   }
+  #error {
+    color: red;
+  }
   hr {
     height: 1px;
     border: 1px solid lightgrey;
@@ -61,11 +64,11 @@ See LICENSE for details.
       LHTML current version: <span id="version">vX.Y.Z</span>
     </div>
     <hr/>
-    <div id="status">
-      You have the latest version.
-    </div>
+    <div id="error"></div>
+    <div id="latest_version"></div>
+    <div id="action"></div>
     <div>
-      <button id="do-update-btn"><img src="img/arrow.png"> Update to latest version</button>
+      <button id="do-update-btn"><img src="img/arrow.png"> Update to the latest version</button>
     </div>
   </div>
 <script>
@@ -84,27 +87,37 @@ function parseQuery() {
 var vars = parseQuery();
 document.getElementById('version').innerHTML = vars['version'];
 
-function setStatus(html) {
-  document.getElementById('status').innerHTML = html;
+function set(id, html) {
+  document.getElementById(id).innerHTML = html;
 }
-ipcRenderer.on('checking-for-update', () => {
-  setStatus('Checking for updates...');
-})
-ipcRenderer.on('error', () => {
-  setStatus('Error checking for updates :(');
-})
-ipcRenderer.on('update-available', () => {
-  setStatus('An update is available...');
-})
-ipcRenderer.on('update-not-available', () => {
-  setStatus('You have the latest version.');
-})
-ipcRenderer.on('download-progress', () => {
-  setStatus('An update is being downloaded...');
-})
-ipcRenderer.on('update-downloaded', (ev, releaseName) => {
-  document.getElementById('do-update-btn').className += ' visible';
-  setStatus('<b>A new version is available: ' + releaseName + '</b>');
+ipcRenderer.on('state', (ev, state) => {
+  console.log('state', state);
+  if (state.action === 'checking') {
+    set('action', 'Checking for update...');
+  } else if (state.action === 'downloading') {
+    set('action', 'Downloading update...');
+  } else {
+    set('action', '');
+  }
+  if (state.latest_version) {
+    if (state.update_available) {
+      set('latest_version', `Version ${state.latest_version.version} available.`);
+    } else {
+      set('latest_version', 'You have the latest version');
+    }
+  } else {
+    set('latest_version', '');
+  }
+  if (state.error) {
+    set('error', state.error);
+  } else {
+    set('error', '');
+  }
+  if (state.update_downloaded) {
+    document.getElementById('do-update-btn').className = 'visible';
+  } else {
+    document.getElementById('do-update-btn').className = '';
+  }
 })
 document.getElementById('do-update-btn').addEventListener('click', function() {
   ipcRenderer.send('do-update');
