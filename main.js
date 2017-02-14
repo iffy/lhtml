@@ -192,52 +192,81 @@ function createDefaultWindow() {
 //-------------------------------------------------------------------
 // Auto updates
 //-------------------------------------------------------------------
-let UPDATE_DOWNLOADED = false;
+class Updater {
+  constructor(state_receiver) {
+    this.state_receiver = state_receiver;
+
+    this.state = {
+      action: null,
+      error: null,
+      latest_version: null,
+      update_available: null,
+      update_downloaded: null,
+    }
+
+    autoUpdater.on('checking-for-update', () => {
+      this.state.action = 'checking';
+      state_receiver(this.state);
+    })
+    autoUpdater.on('update-available', (info) => {
+      log.info('arguments', arguments);
+      this.state.action = 'downloading';
+      this.state.latest_version = info;
+      this.state.update_available = true;
+      state_receiver(this.state);
+      log.info('update-available info', info);
+    })
+    autoUpdater.on('update-not-available', (info) => {
+      log.info('arguments', arguments);
+      this.state.action = null;
+      this.state.latest_version = info;
+      this.state.update_available = false;
+      state_receiver(this.state);
+      log.info('update-not-available info', info);
+    })
+    autoUpdater.on('error', (ev, err) => {
+      this.state.error = 'Error encountered while updating.';
+      this.state.action = null;
+      state_receiver(this.state);
+    })
+    autoUpdater.on('download-progress', (info) => {
+      this.state.action = 'downloading';
+      state_receiver(this.state);
+    })
+    autoUpdater.on('update-downloaded', (info) => {
+      this.state.action = null;
+      this.state.update_downloaded = true;
+      state_receiver(this.state);
+    })
+  }
+  checkForUpdates() {
+    this.state_receiver(this.state);
+    if (this.state.action || this.state.update_downloaded
+        || this.state.latest_versrion || this.state.update_available) {
+      return;
+    }
+    autoUpdater.checkForUpdates();
+  }
+}
 let update_window;
 
-autoUpdater.on('checking-for-update', (ev) => {
-  sendToUpdateWindow('checking-for-update');
-})
-autoUpdater.on('update-available', (ev) => {
-  sendToUpdateWindow('update-available');
-})
-autoUpdater.on('update-not-available', (ev) => {
-  sendToUpdateWindow('update-not-available');
-})
-autoUpdater.on('error', (ev) => {
-  sendToUpdateWindow('error');
-})
-autoUpdater.on('download-progress', (ev) => {
-})
-autoUpdater.on('update-downloaded', (ev, releaseNotes, releaseName, releaseDate, updateURL) => {
-  UPDATE_DOWNLOADED = releaseName;
-  promptForUpdate();
-})
+let updater = new Updater(state => {
+  console.log('update state:', state);
+  if (update_window) {
+    update_window.webContents.send('state', state);
+  }
+});
 ipcMain.on('do-update', () => {
-  if (UPDATE_DOWNLOADED) {
+  if (updater.state.update_downloaded) {
     autoUpdater.quitAndInstall();
   }
 });
 
-function checkForUpdates() {
-  autoUpdater.checkForUpdates()
-  .then(result => {
-    log.debug('check for updates result', result);
-  })
-  .catch(err => {
-    log.debug('Error checking for update');
-  })
-}
-
 function promptForUpdate() {
   if (update_window) {
-    // already exists
-    if (UPDATE_DOWNLOADED) {
-      update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
-    } else {
-      checkForUpdates();
-    }
-    return;
+    // window already exists
+    updater.checkForUpdates();
+    return update_window;
   }
   update_window = new BrowserWindow({
     titleBarStyle: 'hidden',
@@ -250,11 +279,7 @@ function promptForUpdate() {
   });
   update_window.on('ready-to-show', () => {
     update_window.show();
-    if (UPDATE_DOWNLOADED) {
-      update_window.webContents.send('update-downloaded', UPDATE_DOWNLOADED);
-    } else {
-      checkForUpdates();
-    }
+    updater.checkForUpdates();
   })
   update_window.on('closed', () => {
     update_window = null;
@@ -263,11 +288,6 @@ function promptForUpdate() {
   return update_window;
 }
 
-function sendToUpdateWindow(name, data) {
-  if (update_window) {
-    update_window.webContents.send(name, data);
-  }
-}
 
 function createLHTMLWindow() {
   // Create a session with network access disabled
@@ -361,7 +381,7 @@ app.on('ready', function() {
   if (process.env.CHECK_FOR_UPDATES === "no") {
     log.info('UPDATE CHECKING DISABLED');
   } else {
-    checkForUpdates();
+    updater.checkForUpdates();
   }
 
   let sesh = session.fromPartition('persist:webviews');
