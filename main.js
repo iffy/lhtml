@@ -106,13 +106,13 @@ let template = [{
   label: 'View',
   submenu: [
     {
-      label: 'Show/Hide Main Dev Tools',
+      label: 'Toggle Dev Tools',
       click() {
         toggleMainDevTools();
       },
     },
     {
-      label: 'Show/Hide Document Dev Tools',
+      label: 'Toggle Document Dev Tools',
       click() {
         toggleDocumentDevTools();
       },
@@ -251,7 +251,6 @@ class Updater {
 let update_window;
 
 let updater = new Updater(state => {
-  console.log('update state:', state);
   if (update_window) {
     update_window.webContents.send('state', state);
   }
@@ -404,7 +403,11 @@ app.on('ready', function() {
   // Disable networking for webviews
   sesh.webRequest.onBeforeRequest((details, callback) => {
     if (details.url.startsWith('lhtml://')) {
-      // only lhtml requests are allowed
+      // lhtml requests are allowed
+      callback({})
+    } else if (details.url.startsWith('chrome-devtools://')) {
+      // chrome-devtools requests are allowed
+      // XXX Is this a security problem?
       callback({})
     } else {
       log.debug(`Document attempted ${details.method} ${details.url}`);
