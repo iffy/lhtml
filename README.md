@@ -148,12 +148,16 @@ window.LHTML && LHTML.fs.writeFile('foo.txt', 'guts').then(function() {
 Listen for one of these events:
 
 - `saved` - emitted after the document has been saved.  The handler is called with no arguments.
+- `error` - emitted for certain errors.  Comes with a `message` property.
 
 Usage:
 
 ```javascript
 window.LHTML && LHTML.on('saved', function() {
     console.log('The file was saved!');
+})
+window.LHTML && LHTML.on('error', function(err) {
+    console.log('Error encountered:', err.message);
 })
 ```
 

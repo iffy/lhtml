@@ -543,10 +543,7 @@ function _saveDoc(win) {
     .then((save_data) => {
       let doc_info = WINDOW2DOC_INFO[win.id];
       let saves = _.map(save_data, (guts, filename) => {
-        return safe_join(doc_info.dir, filename)
-        .then(full_path => {
-          fs.writeFileSync(full_path, guts);
-        })
+        return doc_info.chroot.writeFile(filename, guts);
       });
 
 
@@ -561,6 +558,9 @@ function _saveDoc(win) {
         log.info('saved');
         win.setDocumentEdited(false);
         RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);  
+      }, err => {
+        // Error saving
+        RPC.call('emit_event', {'key': 'error', 'data': {'message': 'Error saving'}})
       })
     });
 }
