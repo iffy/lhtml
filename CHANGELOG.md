@@ -1,3 +1,8 @@
 <!-- THIS FILE IS AUTOMATICALLY UPDATED. SEE THE README -->
-<!-- LAST COMMIT:003af3727689515f9a0b0bc317d8f5f7aa05ec5c: -->
+<!-- LAST COMMIT:ff17ce9c4051e84db005971525c4e3a98a72fe2c: -->
+
+### v0.3.5
+
+- NEW:  Add system for updating CHANGELOG.md from git log
+
 
