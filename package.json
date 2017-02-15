@@ -51,7 +51,8 @@
     "fileAssociations": [
       {
         "ext": "lhtml",
-        "role": "Editor"
+        "role": "Editor",
+        "icon": "build/lhtmldoc.icns"
       }
     ],
     "linux": {
