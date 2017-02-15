@@ -35,7 +35,7 @@ RPC.handlers = {
     var event = data.key;
     var event_data = data.data;
     _.each(EVENT_HANDLERS[data.key], (func) => {
-      func(EVENT_HANDLERS[data.data]);
+      func(data.data);
     });
   }
 }
