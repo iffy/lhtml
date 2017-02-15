@@ -38,6 +38,16 @@
         "dmg"
       ]
     },
+    "dmg": {
+      "icon": "build/dmg.icns"
+    },
+    "files": [
+      "!devfiles${/*}",
+      "!samples${/*}",
+      "!demos${/*}",
+      "!doc${/*}",
+      "!test${/*}"
+    ],
     "fileAssociations": [
       {
         "ext": "lhtml",
