@@ -38,6 +38,13 @@
         "dmg"
       ]
     },
+    "files": [
+        "!devfiles${/*}",
+        "!samples${/*}",
+        "!demos${/*}",
+        "!doc${/*}",
+        "!test${/*}"
+    ],
     "fileAssociations": [
       {
         "ext": "lhtml",
