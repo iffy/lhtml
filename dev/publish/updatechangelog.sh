@@ -13,6 +13,6 @@ CURRENT_COMMIT=$(git log --format=%H -n1)
 
 echo '<!-- THIS FILE IS AUTOMATICALLY UPDATED. SEE THE README -->' > _CHANGELOG.md
 echo '<!--' "LAST COMMIT:${CURRENT_COMMIT}:" '-->' >> _CHANGELOG.md
-"${thisdir}/extract_changes.sh" $LAST_COMMIT >> _CHANGELOG.md
+"${thisdir}/extract_changes.sh" $LAST_COMMIT | tee -a _CHANGELOG.md
 tail -n +3 "${CHANGELOG}" >> _CHANGELOG.md
-mv _CHANGELOG.md "${CHANGELOG}.md"
+mv _CHANGELOG.md "${CHANGELOG}"

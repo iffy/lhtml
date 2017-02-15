@@ -35,8 +35,7 @@ echo
 # Changelog body
 #---------------------------------------------------------------
 
-git log "$SINCE_SHA"... | egrep '^(fix|break|feature|refactor|misc): ' | while read line; do
-    echo LINE: $line
+git log --format=%B "$SINCE_SHA"... | egrep '^(fix|break|feature|refactor|misc):' | while read line; do
     change_type="$(echo $line | cut -d':' -f1)"
     rest="$(echo $line | cut -d':' -f2-)"
     case "$change_type" in
@@ -47,7 +46,7 @@ git log "$SINCE_SHA"... | egrep '^(fix|break|feature|refactor|misc): ' | while r
             echo '- **BACKWARDS INCOMPATIBLE CHANGE:**' "$rest"
             ;;
         feature)
-            echo '- Feature:' "$rest"
+            echo '- NEW:' "$rest"
             ;;
         refactor|misc)
             echo "- $rest"
