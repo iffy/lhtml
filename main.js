@@ -128,7 +128,9 @@ if (process.platform === 'darwin') {
     submenu: [
       {
         label: 'About ' + name,
-        role: 'about'
+        click() {
+          promptForUpdate();
+        },
       },
       {
         label: 'Check for updates...',
@@ -268,13 +270,11 @@ function promptForUpdate() {
     return update_window;
   }
   update_window = new BrowserWindow({
-    titleBarStyle: 'hidden',
-    x: 0,
-    y: 10,
-    width: 400,
-    height: 200,
+    width: 300,
+    height: 250,
     resizable: false,
     show: false,
+    title: '',
   });
   update_window.on('ready-to-show', () => {
     update_window.show();
@@ -283,7 +283,7 @@ function promptForUpdate() {
   update_window.on('closed', () => {
     update_window = null;
   });
-  update_window.loadURL(`file://${__dirname}/updates.html?version=v${app.getVersion()}`);
+  update_window.loadURL(`file://${__dirname}/updates.html?version=${app.getVersion()}`);
   return update_window;
 }
 

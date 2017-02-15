@@ -5,15 +5,16 @@ Copyright (c) The LHTML team
 See LICENSE for details.
 -->
 <head>
-  <title>LHTML Viewer</title>
+  <title>&nbsp;</title>
   <style type="text/css">
   body {
     margin: 0;
     padding: 0;
-    background-color: white;
+    background-color: rgba(236,236,236,1.0);
     -ms-overflow-style: scrollbar;
     -webkit-app-region:drag;
     font-family: Arial;
+    font-size: 12px;
   }
   * {
     box-sizing: border-box;
@@ -29,6 +30,11 @@ See LICENSE for details.
   }
   .wrap .icon {
     margin: 20px;
+  }
+  .title {
+    font-weight: bold;
+    font-size: 14px;
+    margin-top: 14px;
   }
   #do-update-btn {
     visibility: hidden;
@@ -60,9 +66,11 @@ See LICENSE for details.
 </head>
 <body>
   <div class="wrap">
-    <div>
-      LHTML current version: <span id="version">vX.Y.Z</span>
-    </div>
+    <img src="img/icon.png" />
+    <div class="title">LHTML</div>
+    <div id="version">vX.Y.Z</div>
+    <hr/>
+    <div><a id="changelog-link" href="#">Changelog</a></div>
     <hr/>
     <div id="error"></div>
     <div id="latest_version"></div>
@@ -73,6 +81,7 @@ See LICENSE for details.
   </div>
 <script>
 const {ipcRenderer} = require('electron');
+const {shell} = require('electron')
 
 function parseQuery() {
   var ret = {};
@@ -85,7 +94,7 @@ function parseQuery() {
   return ret;
 }
 var vars = parseQuery();
-document.getElementById('version').innerHTML = vars['version'];
+document.getElementById('version').innerHTML = `Version ${vars.version}`;
 
 function set(id, html) {
   document.getElementById(id).innerHTML = html;
@@ -122,6 +131,9 @@ ipcRenderer.on('state', (ev, state) => {
 document.getElementById('do-update-btn').addEventListener('click', function() {
   ipcRenderer.send('do-update');
 });
+document.getElementById('changelog-link').addEventListener('click', function() {
+  shell.openExternal('https://github.com/iffy/lhtml/blob/master/CHANGELOG.md')
+})
 </script>
 </body>
 </html>
