@@ -300,5 +300,9 @@ You can omit whichever arch/platform you don't need to build.
 
 To manually create a draft release, you'll need a `GH_TOKEN` with `repo` scope access.  Generate one on GitHub (in Settings somewhere).  Once you have the token do:
 
-    GH_TOKEN="..." build --win --mac --linux --ia32 --x64 --draft -p always
+    GH_TOKEN="..." dev/publish/publish.sh
+
+Update `CHANGELOG.md` with:
+
+    dev/publish/updatechangelog.sh
 

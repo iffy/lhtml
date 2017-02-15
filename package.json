@@ -42,7 +42,7 @@
       "icon": "build/dmg.icns"
     },
     "files": [
-      "!devfiles${/*}",
+      "!dev${/*}",
       "!samples${/*}",
       "!demos${/*}",
       "!doc${/*}",
