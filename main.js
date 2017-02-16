@@ -319,11 +319,11 @@ function createLHTMLWindow() {
     if (win.isDocumentEdited()) {
       let choice = dialog.showMessageBox(win, {
         type: 'question',
-        buttons: ['Close', "Don't close"],
+        buttons: ["Don't close", 'Close'],
         title: 'Confirm',
         message: 'Unsaved changes will be lost.  Are you sure you want to close this document?'
       });
-      if (choice === 1) {
+      if (choice === 0) {
         ev.preventDefault();
       }
     }
