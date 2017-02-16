@@ -1,6 +1,8 @@
 // Copyright (c) The LHTML team
 // See LICENSE for details.
 
+const log = require('electron-log');
+
 class RPCService {
   constructor(listener, options) {
     options = options || {};
@@ -26,7 +28,8 @@ class RPCService {
     if (this._sender_id) {
       message.sender_id = this._sender_id;
     }
-    console.log(`RPC[${message_id}] call:`, method, params);
+    log.info(`RPC[${message_id}] ${message.method} call`);
+    log.debug('params', params);
     return new Promise((resolve, reject) => {
       this._pending[message_id] = {
         resolve: resolve,
@@ -45,7 +48,8 @@ class RPCService {
     return this;
   }
   request_received(event, message) {
-    console.log(`RPC[${message.id}] request:`, message);
+    log.info(`RPC[${message.id}] ${message.method} req`);
+    log.debug('MESSAGE', message);
     let receiver = this.DEFAULT_RESPONSE_RECEIVER || event.sender;
     let handler = this.handlers[message.method];
     if (!handler) {
@@ -64,13 +68,15 @@ class RPCService {
         response = Promise.reject(err);
       }
       return response.then((result) => {
-        console.log(`RPC[${message.id}] result:`, result);
+        log.info(`RPC[${message.id}] ${message.method} done`);
+        log.debug(result);
         receiver.send('rpc-response', {
           id: message.id,
           result: result,
         })
       }, (error) => {
-        console.log(`RPC[${message.id}] error:`, error);
+        log.info(`RPC[${message.id}] ${message.method} error`);
+        log.debug(error);
         receiver.send('rpc-response', {
           id: message.id,
           error: error,
@@ -79,7 +85,8 @@ class RPCService {
     }
   }
   response_received(event, response) {
-    console.log(`RPC[${response.id}] response:`, response);
+    log.info(`RPC[${response.id}] response`);
+    log.debug(response);
     var handler = this._pending[response.id];
     delete this._pending[response.id];
     if (response.error) {

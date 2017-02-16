@@ -16,7 +16,15 @@ const {safe_join, ChrootFS} = require('./chrootfs.js');
 const {autoUpdater} = require("electron-updater");
 
 autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = 'info';
+
+log.transports.file.level = 'info';
+log.transports.file.maxSize = 5 * 1024 * 1024;
+if (process.env.DEBUG) {
+  log.transports.file.level = 'debug';
+}
+if (process.env.NODEBUG) {
+  log.transports.console.level = 'info';
+}
 
 log.info('LHTML starting...');
 
