@@ -27,9 +27,17 @@ RPC.handlers = {
     return 'echo:' + data;
   },
   get_save_data: (ctx, data) => {
+    var p;
     if (SAVER) {
-      return SAVER();
+      p = Promise.resolve(SAVER());
+    } else {
+      p = Promise.resolve({})
     }
+    return p.then(result => {
+      TMP_DOC_EDITED = false;
+      SAVING = true;
+      return result;
+    })
   },
   emit_event: (ctx, data) => {
     var event = data.key;
@@ -45,6 +53,19 @@ RPC.handlers = {
 //
 //  Every function on LHTML is available to guest files.
 //----------------------------------------------------------------------------
+
+//
+//  Register something to handle events.
+//
+//  Some events:
+//    saved
+let EVENT_HANDLERS = {};
+LHTML.on = (event, handler) => {
+  if (!EVENT_HANDLERS[event]) {
+    EVENT_HANDLERS[event] = [];
+  }
+  EVENT_HANDLERS[event].push(handler);
+}
 
 //---------------------------
 // Saving stuff
@@ -84,9 +105,45 @@ LHTML.saving.registerSaver = (func) => {
 LHTML.saving.save = () => {
   return RPC.call('save');
 }
+let DOC_EDITED = false;
+let TMP_DOC_EDITED = false;
+let SAVING = false;
 LHTML.saving.setDocumentEdited = (edited) => {
-  return RPC.call('set_document_edited', !!edited);
+  edited = !!edited;
+  if (SAVING) {
+    // A save has been started but not yet finished
+    if (edited) {
+      // An edit has happened since saving
+      TMP_DOC_EDITED = true;
+    } else {
+      // There are no edits since saving.
+      TMP_DOC_EDITED = false;
+    }
+  } else {
+    if (DOC_EDITED !== edited) {
+      DOC_EDITED = edited;
+      return RPC.call('set_document_edited', !!edited);  
+    } else {
+      // Nothing has changed since the last time you called.
+      return Promise.resolve(edited);
+    }
+  }
 }
+LHTML.on('saved', () => {
+  SAVING = false;
+  // Whatever the edited status was set to during saving is the
+  // status it is now.
+  DOC_EDITED = TMP_DOC_EDITED;
+  RPC.call('set_document_edited', DOC_EDITED);
+})
+LHTML.on('save-failed', () => {
+  SAVING = false;
+  // If the document was edited before saving OR if it was edited
+  // during saving, the current status is true (the doc is edited)
+  DOC_EDITED = DOC_EDITED || TMP_DOC_EDITED;
+  RPC.call('set_document_edited', DOC_EDITED);
+})
+
 //
 // form-saving default
 //
@@ -134,19 +191,6 @@ LHTML.fs.remove = (path) => {
 //
 LHTML.fs.listdir = (path) => {
   return RPC.call('listdir', path);
-}
-
-//
-//  Register something to handle events.
-//
-//  Some events:
-//    saved
-let EVENT_HANDLERS = {};
-LHTML.on = (event, handler) => {
-  if (!EVENT_HANDLERS[event]) {
-    EVENT_HANDLERS[event] = [];
-  }
-  EVENT_HANDLERS[event].push(handler);
 }
 
 //

@@ -556,11 +556,10 @@ function _saveDoc(win) {
           zip.writeZip(doc_info.zip);
         }
         log.info('saved');
-        win.setDocumentEdited(false);
         RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);  
       }, err => {
         // Error saving
-        RPC.call('emit_event', {'key': 'error', 'data': {'message': 'Error saving'}})
+        RPC.call('emit_event', {'key': 'save-failed', 'data': null}, guest);
       })
     });
 }
