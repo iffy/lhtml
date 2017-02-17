@@ -16,21 +16,20 @@ const {safe_join, ChrootFS} = require('./chrootfs.js');
 const {autoUpdater} = require("electron-updater");
 
 autoUpdater.logger = log;
-
-log.transports.file.level = 'info';
-log.transports.file.maxSize = 5 * 1024 * 1024;
-if (process.env.DEBUG) {
-  log.transports.file.level = 'debug';
-}
-if (process.env.NODEBUG) {
-  log.transports.console.level = 'info';
-}
+autoUpdater.logger.transports.file.level = 'info';
 
 log.info('LHTML starting...');
 
 let template = [{
   label: 'File',
   submenu: [
+    {
+      label: 'New From Template...',
+      accelerator: 'CmdOrCtrl+N',
+      click() {
+        return newFromTemplate();
+      },
+    },
     {
       label: 'Open...',
       accelerator: 'CmdOrCtrl+O',
@@ -58,6 +57,12 @@ let template = [{
       click() {
         return saveAsFocusedDoc();
       },
+    },
+    {
+      label: 'Save As Template...',
+      click() {
+        return saveTemplateFocusedDoc();
+      }
     },
     {
       label: 'Close',
@@ -327,29 +332,23 @@ function createLHTMLWindow() {
     if (win.isDocumentEdited()) {
       let choice = dialog.showMessageBox(win, {
         type: 'question',
-        buttons: ["Don't close", 'Close'],
+        buttons: ['Close', "Don't close"],
         title: 'Confirm',
         message: 'Unsaved changes will be lost.  Are you sure you want to close this document?'
       });
-      if (choice === 0) {
+      if (choice === 1) {
         ev.preventDefault();
       }
     }
   })
   win.on('closed', () => {
-    let doc_info = WINDOW2DOC_INFO[win_id];
-    if (!doc_info) {
+    let doc = WINDOW2DOC_INFO[win_id];
+    if (!doc) {
       return;
     }
-    if (doc_info.tmpdir) {
-      fs.remove(doc_info.dir, (error) => {
-        if (error) {
-          log.error('Error deleting tmpdir:', error);
-        }
-      });
-    }
+    doc.close();
     delete WINDOW2DOC_INFO[win_id];
-    delete OPENDOCUMENTS[doc_info.id];
+    delete OPENDOCUMENTS[doc.id];
   });
 
   // Close the default window once a guest window has been opened.
@@ -369,6 +368,142 @@ function randomIdentifier() {
 
 let OPENDOCUMENTS = {};
 let WINDOW2DOC_INFO = {};
+
+
+class Document {
+  //
+  // @param path: Path to file being opened.
+  constructor(path) {
+    this._chroot = null;
+    this.window_id = null;
+    
+    // random 
+    this.id = randomIdentifier();
+
+    // Path to the LHTML file or directory
+    this.save_path = path;
+    this.is_directory = fs.lstatSync(path).isDirectory();
+    this._tmpdir = null;
+
+    // Path where LHTML is expanded into
+    this._working_dir = null;
+  }
+  get working_dir() {
+    if (!this._working_dir) {
+      if (this.is_directory) {
+        this._working_dir = this.save_path;
+      } else {
+        this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
+        this._working_dir = this._tmpdir.name;
+        let zip = new AdmZip(this.save_path);
+        log.info('extracting to', this._working_dir);
+        zip.extractAllTo(this._working_dir, /*overwrite*/ true);  
+      }
+    }
+    console.log('working_dir', this._working_dir);
+    return this._working_dir;
+  }
+  get chroot() {
+    if (!this._chroot) {
+      console.log('chroot working_dir', this.working_dir);
+      this._chroot = new ChrootFS(this.working_dir);
+    }
+    return this._chroot;
+  }
+  close() {
+    return new Promise((resolve, reject) => {
+      if (this._tmpdir) {
+        try {
+          this._tmpdir.removeCallback()
+        } catch(err) {
+          log.error('Error deleting working_dir:', err);
+        }
+        this._tmpdir = null;
+        this._working_dir = null;
+        this._chroot = null;
+        resolve(null);
+      }
+    })
+  }
+  _updateWorkingDirFromSaveData() {
+    let guest = this._rpcGuest();
+    return RPC.call('get_save_data', null, guest)
+      .then((save_data) => {
+        let saves = _.map(save_data, (guts, filename) => {
+          return this.chroot.writeFile(filename, guts);
+        });
+        return Promise.all(saves);
+      });
+  }
+  get window() {
+    return BrowserWindow.fromId(this.window_id);
+  }
+  _rpcGuest() {
+    if (!this.window) {
+      throw new Error('No window');
+    }
+    return this.window.webContents;
+  }
+  save() {
+    if (!this.save_path) {
+      return this.saveAs();
+    }
+    let guest = this._rpcGuest();
+    return this._updateWorkingDirFromSaveData()
+    .then(result => {
+      if (this.is_directory) {
+        // done, it's already saved
+      } else {
+        // Write a new zip file
+        let zip = new AdmZip();
+        zip.addLocalFolder(this.working_dir, '.');
+        zip.writeZip(this.save_path);
+      }
+      log.info('saved', this.save_path);
+      RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
+    }, err => {
+      RPC.call('emit_event', {'key': 'save-failed', 'data': null}, guest);
+    })
+  }
+  saveAs() {
+    let defaultPath = this.save_path ? Path.dirname(this.save_path) : null;
+    return new Promise((resolve, reject) => {
+      dialog.showSaveDialog({
+        defaultPath: defaultPath,
+        filters: [
+          {name: 'LHTML', extensions: ['lhtml']},
+          {name: 'All Files', extensions: ['*']},
+        ],
+      }, dst => {
+        if (!dst) {
+          return;
+        }
+        this.changeSavePath(dst)
+        return resolve(this.save());
+      });
+    })
+  }
+  changeSavePath(new_path) {
+    if (new_path !== this.save_path) {
+      if (this.is_directory) {
+        // Copy from dir to a new working dir
+        this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
+        this._working_dir = this._tmpdir.name;
+        this._chroot = null;
+        fs.copySync(this.save_path, this._working_dir)
+        this.is_directory = false;
+      }
+      this.save_path = new_path;
+      this.window && this.window.setDocumentEdited(true);
+    }
+  }
+  attachToWindow(window_id) {
+    if (this.window_id) {
+      throw new Error('Document already attached to a window');
+    }
+    this.window_id = window_id;
+  }
+}
 
 protocol.registerStandardSchemes(['lhtml'])
 
@@ -398,7 +533,7 @@ app.on('ready', function() {
     const parsed = URL.parse(request.url);
     const domain = parsed.host;
     const path = parsed.path;
-    const root_dir = OPENDOCUMENTS[domain].dir;
+    const root_dir = OPENDOCUMENTS[domain].working_dir;
     safe_join(root_dir, path).then(file_path => {
       callback({path: file_path});
     });
@@ -469,6 +604,25 @@ function promptOpenFile() {
   });
 }
 
+function newFromTemplate() {
+  let defaultPath = getDefaultTemplateDir();
+  dialog.showOpenDialog({
+    title: 'New From Template...',
+    defaultPath: defaultPath,
+    properties: ['openFile'],
+    filters: [
+      {name: 'LHTML', extensions: ['lhtml']},
+      {name: 'All Files', extensions: ['*']},
+    ],
+  }, (filePaths) => {
+    if (!filePaths) {
+      return;
+    }
+    let doc = openPath(filePaths[0]);
+    doc.changeSavePath(null);
+  }); 
+}
+
 function openDirectory() {
   dialog.showOpenDialog({
     title: 'Open Directory...',
@@ -481,57 +635,38 @@ function openDirectory() {
   });
 }
 
-function _unzip(path) {
-  let doc_info = {};
-  doc_info.tmpdir = Tmp.dirSync();
-  doc_info.dir = doc_info.tmpdir.name;
-  doc_info.zip = path;
-  let zip = new AdmZip(path);
-  log.info('extracting to', doc_info.dir);
-  zip.extractAllTo(doc_info.dir, /*overwrite*/ true);
-  return doc_info;
-}
-
 function openPath(path) {
   // Is it already opened?
   let existing = _(OPENDOCUMENTS)
     .values()
-    .filter(doc_info => {
-      return doc_info.original_path === path;
+    .filter(doc => {
+      return doc.save_path === path;
     })
     .first();
   if (existing) {
     BrowserWindow.fromId(existing.window_id).focus();
     return;
   }
+
   var dirPath;
-  let ident = randomIdentifier();
-  let doc_info = {
-    id: ident,
-    original_path: path,
-  };
-  if (fs.lstatSync(path).isFile()) {
-    try {
-      _.merge(doc_info, _unzip(path));  
-    } catch (err) {
-      dialog.showErrorBox("Error opening file", "Filename: " + path + "\n\n" + err);
-      return;
-    }
-  } else {
-    // Open expanded directory
-    doc_info.dir = path;
+  let doc = new Document(path);
+  try {
+    let chroot = doc.chroot;
+  } catch (err) {
+    dialog.showErrorBox("Error opening file", "Filename: " + path + "\n\n" + err);
+    return;
   }
-  doc_info.chroot = new ChrootFS(doc_info.dir);
 
   // Open a new window
   let win = createLHTMLWindow();
-  doc_info.window_id = win.id;
+  doc.attachToWindow(win.id);
 
-  WINDOW2DOC_INFO[win.id] = OPENDOCUMENTS[ident] = doc_info;
-  var url = `lhtml://${ident}/index.html`;
+  WINDOW2DOC_INFO[win.id] = OPENDOCUMENTS[doc.id] = doc;
+  var url = `lhtml://${doc.id}/index.html`;
   win.webContents.on('did-finish-load', (event) => {
     win.webContents.send('load-file', url);
   });
+  return doc;
 }
 
 function reloadFocusedDoc() {
@@ -539,97 +674,84 @@ function reloadFocusedDoc() {
 }
 
 function saveFocusedDoc() {
-  let current = currentDocument();
+  let current = currentWindow();
   if (current) {
-    _saveDoc(current);
+    let doc = WINDOW2DOC_INFO[current.id];
+    if (!doc) {
+      return;
+    }
+    return doc.save();
   }
-}
-
-function _saveDoc(win) {
-  var guest = win.webContents;
-  return RPC.call('get_save_data', null, guest)
-    .then((save_data) => {
-      let doc_info = WINDOW2DOC_INFO[win.id];
-      let saves = _.map(save_data, (guts, filename) => {
-        return doc_info.chroot.writeFile(filename, guts);
-      });
-
-
-      return Promise.all(saves)
-      .then(result => {
-        // Overwrite original zip, if it's a zip
-        if (doc_info.zip) {
-          var zip = new AdmZip();
-          zip.addLocalFolder(doc_info.dir, '.');
-          zip.writeZip(doc_info.zip);
-        }
-        log.info('saved');
-        RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);  
-      }, err => {
-        // Error saving
-        RPC.call('emit_event', {'key': 'save-failed', 'data': null}, guest);
-      })
-    });
 }
 
 function saveAsFocusedDoc() {
-  let current = currentDocument();
+  let current = currentWindow();
+  if (current) {
+    let doc = WINDOW2DOC_INFO[current.id];
+    if (!doc) {
+      return;
+    }
+    return doc.saveAs();
+  }
+}
+
+function getDefaultTemplateDir() {
+  let template_dir = null;
+  try {
+    template_dir = Path.join(app.getPath('documents'), 'lhtml_templates');
+    fs.ensureDirSync(template_dir);
+  } catch(err) {
+  }
+  return template_dir;
+}
+
+function saveTemplateFocusedDoc() {
+  let current = currentWindow();
   if (!current) {
     return;
   }
-  let doc_info = WINDOW2DOC_INFO[current.id];
-  let defaultPath = Path.dirname(doc_info.dir);
-  if (doc_info.zip) {
-    defaultPath = Path.dirname(doc_info.zip);
+  let doc = WINDOW2DOC_INFO[current.id];
+  if (!doc) {
+    return;
   }
+  let template_dir = getDefaultTemplateDir();
   dialog.showSaveDialog({
-    defaultPath: defaultPath,
+    defaultPath: template_dir,
     filters: [
       {name: 'LHTML', extensions: ['lhtml']},
       {name: 'All Files', extensions: ['*']},
     ],
   }, dst => {
-    // Copy first
-    if (doc_info.zip) {
-      // Copying from zip to zip
-      fs.copy(doc_info.zip, dst);
-      doc_info.zip = dst;
-    } else {
-      // Copying from dir to zip
-      var zip = new AdmZip();
-      zip.addLocalFolder(doc_info.dir, '.');
-      zip.writeZip(dst);
-      if (doc_info.tmpdir) {
-        fs.remove(doc_info.dir, (error) => {
-          if (error) {
-            log.error('Error deleting tmpdir:', error);
-          }
-        });
-      }
-      _.merge(doc_info, _unzip(dst));
+    if (!dst) {
+      return;
     }
-    // Then save any outstanding changes
-    _saveDoc(current);
-  })
+    let former_path = doc.save_path;
+    doc.changeSavePath(dst);
+    return doc.save().then(result => {
+      doc.changeSavePath(former_path);
+    }, err => {
+      doc.changeSavePath(former_path);
+    });
+  });
 }
 
 
 function closeFocusedDoc() {
-  let current = currentDocument();
+  let current = currentWindow();
   if (current) {
     current.close();
   }
 }
 
 function toggleMainDevTools() {
-  currentDocument().toggleDevTools();
+  currentWindow().toggleDevTools();
 }
 function toggleDocumentDevTools() {
-  currentDocument().webContents.send('toggleDevTools');
+  currentWindow().webContents.send('toggleDevTools');
 }
 
 
-function currentDocument() {
+function currentWindow() {
   let win = BrowserWindow.getFocusedWindow();
   return win;
 }

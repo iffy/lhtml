@@ -3,7 +3,7 @@ var fs = require('fs-extra');
 var Path = require('path');
 const _ = require('lodash');
 const Tmp = require('tmp');
-const {ChrootFS, safe_join, TooBigError} = require('../chrootfs.js');
+const {ChrootFS, safe_join, TooBigError} = require('../src/chrootfs.js');
 
 
 describe('ChrootFS', function() {
