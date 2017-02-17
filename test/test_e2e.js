@@ -1,8 +1,18 @@
 var assert = require('assert');
+var chai = require('chai');
+var chaiAsPromised = require('chai-as-promised');
+const {mock, setDialogAnswer} = require('./mocks.js');
 var fs = require('fs-extra');
 var Path = require('path');
 var {Application} = require('spectron');
-const {waitUntil, waitUntilEqual} = require('./util.js');
+
+const Tmp = require('tmp');
+Tmp.setGracefulCleanup();
+
+beforeEach(() => {
+  chai.should()
+  chai.use(chaiAsPromised)
+});
 
 describe('app launch', function() {
   this.timeout(60000);
@@ -22,30 +32,27 @@ describe('app launch', function() {
   });
 
   afterEach(() => {
-    if (app && app.isRunning()) {
+    if (app) {
       return app.stop();
-    } else {
-      return app.exit();
     }
   });
 
   it('shows an initial window', () => {
-    return app.client.getWindowCount().then(count => {
-      assert.equal(count, 1);
-    })
+    return app.client.waitUntilWindowLoaded()
+      .getWindowCount().should.eventually.equal(1);
   });
 
   describe('open form file', function() {
     beforeEach(() => {
-      return tapp.T_openPath(Path.join(__dirname, 'cases/form'))
+      return app.client.waitUntilWindowLoaded()
       .then(() => {
-        return waitUntilEqual(() => {
-          return app.client.getWindowCount()
-        }, 2)
+        return tapp.T_openPath(Path.join(__dirname, 'cases/form'))
+        .then(() => {
+          return app.client
+            .getWindowCount().should.eventually.equal(2);    
+        })  
       })
-      .then(() => {
-        return app.client.windowByIndex(1);
-      })
+      
     });
 
     // BUG: Spectron seems to still think the window is there
@@ -56,10 +63,73 @@ describe('app launch', function() {
     //   })
     // });
     it('should have the form window open', () => {
-        return app.client.getTitle()
-        .then(title => {
-          assert.equal(title, 'Form Thing');
-        });
+      console.log('window count', app.client.getWindowCount());
+      return app.client
+        .windowByIndex(1)
+        .getTitle().should.eventually.equal('Form Thing');
     });
-  })
+  });
+
+  //----------------------------------------------------------------------
+  // saving/loading
+  //----------------------------------------------------------------------
+  // describe('saving', function() {
+  //   let workdir;
+  //   beforeEach(() => {
+  //     workdir = Tmp.dirSync({unsafeCleanup: true}).name;
+  //   });
+
+  //   describe('from LHTML dir', function() {
+  //     let src_dir;
+  //     beforeEach(() => {
+  //       src_dir = Path.join(workdir, 'src');
+  //       fs.ensureDirSync(src_dir);
+  //       fs.writeFileSync(Path.join(src_dir, 'index.html'),
+  //         '<html><body><input id="theinput"></body></html>');
+  //       console.log('working in', workdir);
+  //       return tapp.T_openPath(src_dir)
+  //       .then(() => {
+  //         return waitUntilEqual(() => {
+  //           return app.client.getWindowCount()
+  //         }, 2)
+  //       })
+  //       .then(() => {
+  //         // focus on the second window
+  //         return app.client.windowByIndex(1);
+  //       })
+  //     })
+
+  //     describe('save', function() {
+  //       it('save', () => {
+  //         assert.equal('foo', 'bar');
+  //       });
+  //     });
+  //     describe('save to file', function() {
+
+  //     });
+  //     describe('save as', function() {
+
+  //     });
+  //     describe('save as template', function() {
+
+  //     });
+  //   });
+
+  //   describe('from LHTML file', function() {
+  //     describe('save', function() {
+
+  //     });
+  //     describe('save as', function() {
+
+  //     });
+  //     describe('save as template', function() {
+
+  //     });
+  //   });
+  // })
 })
+
+
+
+
+

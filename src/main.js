@@ -820,4 +820,8 @@ RPC.handlers = {
 // Test interface
 if (process.env.RUNNING_IN_SPECTRON) {
   app.T_openPath = openPath;
+  app.T_saveFocusedDoc = saveFocusedDoc;
+  app.T_saveAsFocusedDoc = saveAsFocusedDoc;
+  const {mock} = require('../test/mocks.js');
+  mock();
 }
