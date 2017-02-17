@@ -475,6 +475,9 @@ class Document {
           {name: 'All Files', extensions: ['*']},
         ],
       }, dst => {
+        if (!dst) {
+          return;
+        }
         this.changeSavePath(dst)
         return resolve(this.save());
       });
@@ -602,8 +605,10 @@ function promptOpenFile() {
 }
 
 function newFromTemplate() {
+  let defaultPath = getDefaultTemplateDir();
   dialog.showOpenDialog({
     title: 'New From Template...',
+    defaultPath: defaultPath,
     properties: ['openFile'],
     filters: [
       {name: 'LHTML', extensions: ['lhtml']},
@@ -693,13 +698,9 @@ function saveAsFocusedDoc() {
 function getDefaultTemplateDir() {
   let template_dir = null;
   try {
-    template_dir = Path.join(app.getPath('userData'), 'templates');
+    template_dir = Path.join(app.getPath('documents'), 'lhtml_templates');
+    fs.ensureDirSync(template_dir);
   } catch(err) {
-    try {
-      template_dir = Path.join(app.getPath('documents'), 'lhtml_templates');
-    } catch(err) {
-
-    }
   }
   return template_dir;
 }
@@ -721,6 +722,9 @@ function saveTemplateFocusedDoc() {
       {name: 'All Files', extensions: ['*']},
     ],
   }, dst => {
+    if (!dst) {
+      return;
+    }
     let former_path = doc.save_path;
     doc.changeSavePath(dst);
     return doc.save().then(result => {
