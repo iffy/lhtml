@@ -59,6 +59,12 @@ let template = [{
       },
     },
     {
+      label: 'Save As Template...',
+      click() {
+        return saveTemplateFocusedDoc();
+      }
+    },
+    {
       label: 'Close',
       accelerator: 'CmdOrCtrl+W',
       click() {
@@ -481,7 +487,7 @@ class Document {
         this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
         this._working_dir = this._tmpdir.name;
         this._chroot = null;
-        fs.copy(this.save_path, this._working_dir)
+        fs.copySync(this.save_path, this._working_dir)
         this.is_directory = false;
       }
       this.save_path = new_path;
@@ -666,6 +672,9 @@ function saveFocusedDoc() {
   let current = currentWindow();
   if (current) {
     let doc = WINDOW2DOC_INFO[current.id];
+    if (!doc) {
+      return;
+    }
     return doc.save();
   }
 }
@@ -674,8 +683,52 @@ function saveAsFocusedDoc() {
   let current = currentWindow();
   if (current) {
     let doc = WINDOW2DOC_INFO[current.id];
+    if (!doc) {
+      return;
+    }
     return doc.saveAs();
   }
+}
+
+function getDefaultTemplateDir() {
+  let template_dir = null;
+  try {
+    template_dir = Path.join(app.getPath('userData'), 'templates');
+  } catch(err) {
+    try {
+      template_dir = Path.join(app.getPath('documents'), 'lhtml_templates');
+    } catch(err) {
+
+    }
+  }
+  return template_dir;
+}
+
+function saveTemplateFocusedDoc() {
+  let current = currentWindow();
+  if (!current) {
+    return;
+  }
+  let doc = WINDOW2DOC_INFO[current.id];
+  if (!doc) {
+    return;
+  }
+  let template_dir = getDefaultTemplateDir();
+  dialog.showSaveDialog({
+    defaultPath: template_dir,
+    filters: [
+      {name: 'LHTML', extensions: ['lhtml']},
+      {name: 'All Files', extensions: ['*']},
+    ],
+  }, dst => {
+    let former_path = doc.save_path;
+    doc.changeSavePath(dst);
+    return doc.save().then(result => {
+      doc.changeSavePath(former_path);
+    }, err => {
+      doc.changeSavePath(former_path);
+    });
+  });
 }
 
 
