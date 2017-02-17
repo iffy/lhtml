@@ -407,13 +407,15 @@ class Document {
   }
   close() {
     return new Promise((resolve, reject) => {
-      fs.remove(this.working_dir, (error) => {
-        if (error) {
-          log.error('Error deleting working_dir:', error);
-        }
-        this._working_dir = null;
-        resolve(null);
-      })
+      if (!this.is_directory) {
+        fs.remove(this.working_dir, (error) => {
+          if (error) {
+            log.error('Error deleting working_dir:', error);
+          }
+          this._working_dir = null;
+          resolve(null);
+        })
+      }
     })
   }
   _updateWorkingDirFromSaveData() {
