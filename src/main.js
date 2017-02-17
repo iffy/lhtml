@@ -25,6 +25,7 @@ let template = [{
   submenu: [
     {
       label: 'New From Template...',
+      accelerator: 'CmdOrCtrl+N',
       click() {
         return newFromTemplate();
       },
@@ -376,23 +377,24 @@ class Document {
     // Path to the LHTML file or directory
     this.save_path = path;
     this.is_directory = fs.lstatSync(path).isDirectory();
+    this._tmpdir = null;
 
     // Path where LHTML is expanded into
     this._working_dir = null;
   }
   get working_dir() {
-    console.log('')
     if (!this._working_dir) {
       if (this.is_directory) {
         this._working_dir = this.save_path;
       } else {
-        let tmpdir = Tmp.dirSync();
-        this._working_dir = tmpdir.name;
-        let zip = new AdmZip(this._save_path);
+        this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
+        this._working_dir = this._tmpdir.name;
+        let zip = new AdmZip(this.save_path);
         log.info('extracting to', this._working_dir);
         zip.extractAllTo(this._working_dir, /*overwrite*/ true);  
       }
     }
+    console.log('working_dir', this._working_dir);
     return this._working_dir;
   }
   get chroot() {
@@ -402,19 +404,18 @@ class Document {
     }
     return this._chroot;
   }
-  get save_as_dir() {
-    return Path.dirname(this.save_path);
-  }
   close() {
     return new Promise((resolve, reject) => {
-      if (!this.is_directory) {
-        fs.remove(this.working_dir, (error) => {
-          if (error) {
-            log.error('Error deleting working_dir:', error);
-          }
-          this._working_dir = null;
-          resolve(null);
-        })
+      if (this._tmpdir) {
+        try {
+          this._tmpdir.removeCallback()
+        } catch(err) {
+          log.error('Error deleting working_dir:', err);
+        }
+        this._tmpdir = null;
+        this._working_dir = null;
+        this._chroot = null;
+        resolve(null);
       }
     })
   }
@@ -477,8 +478,9 @@ class Document {
     if (new_path !== this.save_path) {
       if (this.is_directory) {
         // Copy from dir to a new working dir
-        let tmpdir = Tmp.dirSync();
-        this._working_dir = tmpdir.name;
+        this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
+        this._working_dir = this._tmpdir.name;
+        this._chroot = null;
         fs.copy(this.save_path, this._working_dir)
         this.is_directory = false;
       }
@@ -522,7 +524,7 @@ app.on('ready', function() {
     const parsed = URL.parse(request.url);
     const domain = parsed.host;
     const path = parsed.path;
-    const root_dir = OPENDOCUMENTS[domain].dir;
+    const root_dir = OPENDOCUMENTS[domain].working_dir;
     safe_join(root_dir, path).then(file_path => {
       callback({path: file_path});
     });
