@@ -822,6 +822,7 @@ if (process.env.RUNNING_IN_SPECTRON) {
   app.T_openPath = openPath;
   app.T_saveFocusedDoc = saveFocusedDoc;
   app.T_saveAsFocusedDoc = saveAsFocusedDoc;
+  app.T_close = closeFocusedDoc;
   const {mock} = require('../test/mocks.js');
   mock();
 }
