@@ -19,10 +19,10 @@ version=$(cat "${thisdir}/../../package.json" | grep version | cut -d'"' -f4)
 #---------------------------------------------------------------
 
 echo
-if echo "$version" | egrep '^.*\.0\.0'; then
+if echo "$version" | egrep '^.*\.0\.0' > /dev/null; then
     # major version
     echo "# v${version}"
-elif echo "$version" | egrep '^.*\.*\.0'; then
+elif echo "$version" | egrep '^.*\.*\.0' > /dev/null; then
     # minor version
     echo "## v${version}"
 else
@@ -35,7 +35,7 @@ echo
 # Changelog body
 #---------------------------------------------------------------
 
-git log --format=%B "$SINCE_SHA"... | egrep '^(fix|break|feature|refactor|misc):' | while read line; do
+git log --format=%B "$SINCE_SHA"... | egrep '^(fix|break|feature|refactor|misc):' | sort -u | while read line; do
     change_type="$(echo $line | cut -d':' -f1)"
     rest="$(echo $line | cut -d':' -f2-)"
     case "$change_type" in

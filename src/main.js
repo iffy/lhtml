@@ -49,7 +49,8 @@ let template = [{
       accelerator: 'CmdOrCtrl+S',
       click() {
         return saveFocusedDoc();
-      }
+      },
+      doc_only: true,
     },
     {
       label: 'Save As...',
@@ -57,12 +58,14 @@ let template = [{
       click() {
         return saveAsFocusedDoc();
       },
+      doc_only: true,
     },
     {
       label: 'Save As Template...',
       click() {
         return saveTemplateFocusedDoc();
-      }
+      },
+      doc_only: true,
     },
     {
       label: 'Close',
@@ -129,6 +132,7 @@ let template = [{
       click() {
         toggleDocumentDevTools();
       },
+      doc_only: true,
     },
   ]
 }]
@@ -200,6 +204,9 @@ function createDefaultWindow() {
   default_window.on('closed', () => {
     default_window = null;
   });
+  default_window.on('focus', () => {
+    enableDocMenuItems(false);
+  })
   default_window.loadURL(`file://${__dirname}/default.html?version=v${app.getVersion()}`);
   return default_window;
 }
@@ -352,6 +359,9 @@ function createLHTMLWindow() {
     delete WINDOW2DOC_INFO[win_id];
     delete OPENDOCUMENTS[doc.id];
   });
+  win.on('focus', () => {
+    enableDocMenuItems(true);
+  })
 
   // Close the default window once a guest window has been opened.
   if (default_window) {
@@ -475,6 +485,9 @@ class Document {
           {name: 'All Files', extensions: ['*']},
         ],
       }, dst => {
+        if (!dst) {
+          return;
+        }
         this.changeSavePath(dst)
         return resolve(this.save());
       });
@@ -531,6 +544,35 @@ app.on('open-file', function(event, path) {
   event.preventDefault();
 })
 
+let menu;
+function getDocOnlyMenuItems(templ) {
+  return _(templ)
+  .map((item) => {
+    let ret = [];
+    if (item.submenu) {
+      ret.push(getDocOnlyMenuItems(item.submenu))
+    }
+    if (item.doc_only) {
+      ret.push(item.label)
+    }
+    return ret;
+  })
+  .flattenDeep()
+  .value();
+}
+let doc_only_menu_items = getDocOnlyMenuItems(template);
+console.log('doc_only_menu_items', doc_only_menu_items);
+function enableDocMenuItems(enabled, themenu) {
+  themenu = themenu || menu;
+  _.each(themenu.items, (item) => {
+    if (item.submenu) {
+      enableDocMenuItems(enabled, item.submenu);
+    }
+    if (_.includes(doc_only_menu_items, item.label)) {
+      item.enabled = enabled;
+    }
+  });
+}
 
 app.on('ready', function() {
   // Updates
@@ -573,7 +615,7 @@ app.on('ready', function() {
   })
 
   // Menu
-  const menu = Menu.buildFromTemplate(template);
+  menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
   if (openfirst) {
@@ -619,8 +661,10 @@ function promptOpenFile() {
 }
 
 function newFromTemplate() {
+  let defaultPath = getDefaultTemplateDir();
   dialog.showOpenDialog({
     title: 'New From Template...',
+    defaultPath: defaultPath,
     properties: ['openFile'],
     filters: [
       {name: 'LHTML', extensions: ['lhtml']},
@@ -710,13 +754,9 @@ function saveAsFocusedDoc() {
 function getDefaultTemplateDir() {
   let template_dir = null;
   try {
-    template_dir = Path.join(app.getPath('userData'), 'templates');
+    template_dir = Path.join(app.getPath('documents'), 'lhtml_templates');
+    fs.ensureDirSync(template_dir);
   } catch(err) {
-    try {
-      template_dir = Path.join(app.getPath('documents'), 'lhtml_templates');
-    } catch(err) {
-
-    }
   }
   return template_dir;
 }
@@ -739,6 +779,9 @@ function saveTemplateFocusedDoc() {
         {name: 'All Files', extensions: ['*']},
       ],
     }, dst => {
+      if (!dst) {
+        return;
+      }
       let former_path = doc.save_path;
       doc.changeSavePath(dst);
       return doc.save().then(result => {
