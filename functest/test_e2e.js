@@ -4,7 +4,7 @@ var assert = require('assert');
 const {mock, setDialogAnswer, setMessageBoxAnswer} = require('./mocks.js');
 var fs = require('fs-extra');
 var Path = require('path');
-const {app, openPath, saveFocusedDoc, saveAsFocusedDoc, closeFocusedDoc, reloadFocusedDoc} = require('../src/main.js');
+const {app, openPath, saveFocusedDoc, saveAsFocusedDoc, saveTemplateFocusedDoc, closeFocusedDoc, reloadFocusedDoc} = require('../src/main.js');
 const {waitUntil, waitUntilEqual} = require('./util.js');
 const {webContents, BrowserWindow} = require('electron');
 const AdmZip = require('adm-zip');
@@ -199,6 +199,39 @@ describe('app launch', function() {
           assert.equal(value, 'garbage');
         })
       });
+
+      it('"Save As Template" should make a template', () => {
+        let dst_file = Path.join(workdir, 'tmpl.lhtml');
+        return executeJavaScript(webview, function() {
+          return document.getElementById('theinput').setAttribute('value', 'horizon');
+        })
+        .then(() => {
+          setDialogAnswer(dst_file)
+          return saveTemplateFocusedDoc()
+        })
+        .then(() => {
+          // Should not have overwritten original
+          assert.doesNotContain(fs.readFileSync(Path.join(src_dir, 'index.html')),
+            'horizon')
+        })
+        .then(() => {
+          // Should have written new file
+          assert.contains(readFromZip(dst_file, './index.html'), 'horizon')
+        })
+        .then(() => {
+          return reloadDocument()
+        })
+        .then(() => {
+          // Should be using the old file
+          return executeJavaScript(webview, function() {
+            return document.getElementById('theinput').getAttribute('value')
+          })
+        })
+        .then(value => {
+          // Should have old value
+          assert.equal(value, null);
+        })
+      });
     });
 
     describe('from LHTML file', function() {
@@ -272,6 +305,38 @@ describe('app launch', function() {
         })
         .then(value => {
           assert.equal(value, 'garbage');
+        })
+      });
+
+      it('"Save As Template" should make a template', () => {
+        let dst_file = Path.join(workdir, 'tmpl.lhtml');
+        return executeJavaScript(webview, function() {
+          return document.getElementById('theinput').setAttribute('value', 'horizon');
+        })
+        .then(() => {
+          setDialogAnswer(dst_file)
+          return saveTemplateFocusedDoc()
+        })
+        .then(() => {
+          // Should not have overwritten original
+          assert.doesNotContain(readFromZip(src_file, './index.html'), 'horizon')
+        })
+        .then(() => {
+          // Should have written new file
+          assert.contains(readFromZip(dst_file, './index.html'), 'horizon')
+        })
+        .then(() => {
+          return reloadDocument()
+        })
+        .then(() => {
+          // Should be using the old file
+          return executeJavaScript(webview, function() {
+            return document.getElementById('theinput').getAttribute('value')
+          })
+        })
+        .then(value => {
+          // Should have old value
+          assert.equal(value, null);
         })
       });
     });
