@@ -60,13 +60,14 @@ let template = [{
       },
       doc_only: true,
     },
-    {
-      label: 'Save As Template...',
-      click() {
-        return saveTemplateFocusedDoc();
-      },
-      doc_only: true,
-    },
+    // Until issue #57 is fixed, don't expose this
+    // {
+    //   label: 'Save As Template...',
+    //   click() {
+    //     return saveTemplateFocusedDoc();
+    //   },
+    //   doc_only: true,
+    // },
     {
       label: 'Close',
       accelerator: 'CmdOrCtrl+W',
