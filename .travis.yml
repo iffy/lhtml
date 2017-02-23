@@ -7,7 +7,7 @@ language: node_js
 node_js:
   - '7'
 
-script: ./test/travis-build.sh
+script: ./test/runtests.sh
 
 cache:
   yarn: true

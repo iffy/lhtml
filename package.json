@@ -6,7 +6,7 @@
   "description": "LHTML Viewer",
   "author": "Matt Haggard <haggardii@gmail.com>",
   "scripts": {
-    "test": "mocha",
+    "test": "test/runtests.sh",
     "pack": "build --dir",
     "dist": "build",
     "postinstall": "install-app-deps"
@@ -16,9 +16,7 @@
     "electron-builder": "^13.6.0",
     "electron-packager": "^8.5.0",
     "esdoc": "^0.5.2",
-    "http-server": "^0.9.0",
-    "mocha": "^3.2.0",
-    "spectron": "^3.4.1"
+    "mocha": "^3.2.0"
   },
   "dependencies": {
     "adm-zip": "^0.4.7",
@@ -46,7 +44,8 @@
       "!samples${/*}",
       "!demos${/*}",
       "!doc${/*}",
-      "!test${/*}"
+      "!test${/*}",
+      "!functest${/*}"
     ],
     "fileAssociations": [
       {

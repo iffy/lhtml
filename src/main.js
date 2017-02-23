@@ -345,10 +345,12 @@ function createLHTMLWindow() {
       });
       if (choice === 1) {
         ev.preventDefault();
+        win.close_promise && win.close_promise(false);
       }
     }
   })
   win.on('closed', () => {
+    win.close_promise && win.close_promise(true)
     let doc = WINDOW2DOC_INFO[win_id];
     if (!doc) {
       return;
@@ -492,15 +494,31 @@ class Document {
     })
   }
   changeSavePath(new_path) {
+    log.debug('changeSavePath', this.save_path, '-->', new_path);
     if (new_path !== this.save_path) {
+      let new_is_directory = fs.existsSync(new_path) && fs.lstatSync(new_path).isDirectory()
       if (this.is_directory) {
-        // Copy from dir to a new working dir
-        this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
-        this._working_dir = this._tmpdir.name;
-        this._chroot = null;
-        fs.copySync(this.save_path, this._working_dir)
-        this.is_directory = false;
+        if (new_is_directory) {
+          log.debug('dir -> dir');
+
+          this._working_dir = null;
+          this._chroot = null;
+        } else {
+          log.debug('dir -> file');
+
+          this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
+          this._working_dir = this._tmpdir.name;
+          this._chroot = null;
+          fs.copySync(this.save_path, this._working_dir) 
+        }
+      } else {
+        if (new_is_directory) {
+          log.debug('file -> dir');
+        } else {
+          log.debug('file -> file');
+        }
       }
+      this.is_directory = new_is_directory;
       this.save_path = new_path;
       this.window && this.window.setDocumentEdited(true);
     }
@@ -511,6 +529,7 @@ class Document {
     }
     this.window_id = window_id;
   }
+
 }
 
 protocol.registerStandardSchemes(['lhtml'])
@@ -557,7 +576,7 @@ function enableDocMenuItems(enabled, themenu) {
 
 app.on('ready', function() {
   // Updates
-  if (process.env.CHECK_FOR_UPDATES === "no") {
+  if (process.env.CHECK_FOR_UPDATES === "no" || process.env.RUN_TESTS) {
     log.info('UPDATE CHECKING DISABLED');
   } else {
     updater.checkForUpdates();
@@ -745,38 +764,52 @@ function getDefaultTemplateDir() {
 function saveTemplateFocusedDoc() {
   let current = currentWindow();
   if (!current) {
-    return;
+    return Promise.resolve(null);
   }
   let doc = WINDOW2DOC_INFO[current.id];
   if (!doc) {
-    return;
+    return Promise.resolve(null);
   }
   let template_dir = getDefaultTemplateDir();
-  dialog.showSaveDialog({
-    defaultPath: template_dir,
-    filters: [
-      {name: 'LHTML', extensions: ['lhtml']},
-      {name: 'All Files', extensions: ['*']},
-    ],
-  }, dst => {
-    if (!dst) {
-      return;
-    }
-    let former_path = doc.save_path;
-    doc.changeSavePath(dst);
-    return doc.save().then(result => {
-      doc.changeSavePath(former_path);
-    }, err => {
-      doc.changeSavePath(former_path);
-    });
-  });
+  return new Promise((resolve, reject) => {
+    dialog.showSaveDialog({
+      defaultPath: template_dir,
+      filters: [
+        {name: 'LHTML', extensions: ['lhtml']},
+        {name: 'All Files', extensions: ['*']},
+      ],
+    }, dst => {
+      if (!dst) {
+        return;
+      }
+      let former_path = doc.save_path;
+      doc.changeSavePath(dst);
+      return doc.save().then(result => {
+        doc.changeSavePath(former_path);
+        return result;
+      }, err => {
+        doc.changeSavePath(former_path);
+        throw err;
+      })
+      .then(resolve)
+      .catch(reject);
+    });  
+  })
 }
 
 
 function closeFocusedDoc() {
   let current = currentWindow();
   if (current) {
-    current.close();
+    return new Promise((resolve, reject) => {
+      current.close_promise = function(result) {
+        delete current.close_promise;
+        resolve(result);
+      };
+      current.close();
+    })
+  } else {
+    return Promise.resolve(false);
   }
 }
 
@@ -858,7 +891,18 @@ RPC.handlers = {
   }
 };
 
+module.exports = {
+  app,
+  openPath,
+  reloadFocusedDoc,
+  closeFocusedDoc,
+  saveFocusedDoc,
+  saveAsFocusedDoc,
+  saveTemplateFocusedDoc,
+};
+
 // Test interface
-if (process.env.RUNNING_IN_SPECTRON) {
-  app.T_openPath = openPath;
+if (process.env.RUN_TESTS) {
+  console.log('RUNNING TESTS');
+  require('../functest/e2e.js');
 }

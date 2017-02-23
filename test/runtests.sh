@@ -10,6 +10,11 @@ echo "node $(node --version)"
 echo "npm $(npm --version)"
 echo "yarn $(yarn --version)"
 
-yarn install
-export CHECK_FOR_UPDATES="no"
-yarn test
+rc=0
+if ! mocha; then
+    rc=1
+fi
+if ! RUN_TESTS="yes" electron . ; then
+    rc=1
+fi
+exit $rc
