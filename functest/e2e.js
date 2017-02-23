@@ -10,7 +10,6 @@ const Tmp = require('tmp');
 Tmp.setGracefulCleanup();
 
 app.on('ready', function() {
-  console.log('e2e app.ready');
   let mocha = new Mocha();
   let testDir = 'functest';
   fs.readdirSync(testDir).filter(function(file){

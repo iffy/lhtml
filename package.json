@@ -44,7 +44,8 @@
       "!samples${/*}",
       "!demos${/*}",
       "!doc${/*}",
-      "!test${/*}"
+      "!test${/*}",
+      "!functest${/*}"
     ],
     "fileAssociations": [
       {

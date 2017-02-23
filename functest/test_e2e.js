@@ -4,19 +4,15 @@ var assert = require('assert');
 const {mock, setDialogAnswer, setMessageBoxAnswer} = require('./mocks.js');
 var fs = require('fs-extra');
 var Path = require('path');
-const {app, openPath, saveFocusedDoc, closeFocusedDoc, reloadFocusedDoc} = require('../src/main.js');
+const {app, openPath, saveFocusedDoc, saveAsFocusedDoc, saveTemplateFocusedDoc, closeFocusedDoc, reloadFocusedDoc} = require('../src/main.js');
 const {waitUntil, waitUntilEqual} = require('./util.js');
 const {webContents, BrowserWindow} = require('electron');
+const AdmZip = require('adm-zip');
 
 const Tmp = require('tmp');
 Tmp.setGracefulCleanup();
 
 const _ = require('lodash');
-
-// beforeEach(() => {
-//   chai.should()
-//   chai.use(chaiAsPromised)
-// });
 
 function _wrapFunction(func) {
   if (_.isFunction(func)) {
@@ -43,6 +39,11 @@ function executeJavaScript(web, func) {
   .catch(err => {
     console.log('error', err);
   })
+}
+
+function readFromZip(zipfile, path) {
+  let zip = new AdmZip(zipfile);
+  return zip.readFile(path);
 }
 
 function openDocument(path) {
@@ -79,13 +80,32 @@ function openDocument(path) {
   })
 }
 
+assert.contains = function(haystack, needle) {
+  let assertion;
+  if (haystack === null || needle === null) {
+    assertion = false;
+  } else {
+    assertion = haystack.indexOf(needle) !== -1
+  }
+  return assert.ok(assertion, `Expected to find\n-->${needle}<--\ninside\n-->${haystack}<--`)
+}
+assert.doesNotContain = function(haystack, needle) {
+  let assertion;
+  if (haystack === null || needle === null) {
+    assertion = false;
+  } else {
+    assertion = haystack.indexOf(needle) === -1
+  }
+  return assert.ok(assertion, `Expected not to find\n-->${needle}<--\ninside\n-->${haystack}<--`);
+}
+
 describe('app launch', function() {
   this.timeout(10000);
 
   beforeEach(() => {
   });
   afterEach(() => {
-    closeFocusedDoc();
+    return closeFocusedDoc();
   });
 
   //----------------------------------------------------------------------
@@ -107,7 +127,7 @@ describe('app launch', function() {
         src_dir = Path.join(workdir, 'src');
         fs.ensureDirSync(src_dir);
         fs.writeFileSync(Path.join(src_dir, 'index.html'),
-          '<!doctype html><html><body><input id="theinput"></body></html>');
+          '<html><body><input id="theinput"></body></html>');
         return openDocument(src_dir)
         .then(result => {
           webview = result.webview;
@@ -115,75 +135,206 @@ describe('app launch', function() {
         })
       })
 
-      describe('save,', function() {
-        it('should save in the dir', () => {
+      it('"Save" should overwrite dir', () => {
+        return executeJavaScript(webview, function() {
+          return document.getElementById('theinput').setAttribute('value', 'jimbo');
+        })
+        .then(() => {
+          return saveFocusedDoc()
+        })
+        .then(() => {
+          assert.contains(fs.readFileSync(Path.join(src_dir, 'index.html')),
+            'jimbo');
+        })
+        .then(() => {
+          reloadFocusedDoc()
+          return waitUntil(() => {
+            return webview.isLoading() === false;
+          });
+        })
+        .then(() => {
           return executeJavaScript(webview, function() {
-            return document.getElementById('theinput').setAttribute('value', 'jimbo');
+            return document.getElementById('theinput').getAttribute('value')
           })
-          .then(() => {
-            return saveFocusedDoc()
-          })
-          .then(() => {
-            assert.equal(true,
-              fs.readFileSync(Path.join(src_dir, 'index.html')).indexOf('jimbo') !== -1);
-          })
-          .then(() => {
-            reloadFocusedDoc()
-            return waitUntil(() => {
-              return webview.isLoading() === false;
-            });
-          })
-          .then(() => {
-            console.log('done reloading?');
-          })
-          // .then(() => {
-          //   console.log('save result', result);
-          // })
-          // saveFocusedDoc()
-          // .then()
-          // return app.client
-          //   .setValue('#theinput', 'argon')
-          //   .then(() => {
-          //     return app.client.windowByIndex(0);
-          //   })
-          //   .then(() => {
-          //     console.log('saveFocusedDoc', tapp);
-          //     return tapp.T_saveFocusedDoc();
-          //   })
-          //   .then(() => {
-          //     console.log('close?');
-          //     return closeDocument();
-          //   })
-          //   .then(() => {
-          //     console.log('opening again', src_dir);
-          //     return openDocument(src_dir)
-          //   })
-          //   .then(() => {
-          //     return app.client
-          //       .getValue('#theinput').should.eventually.equal('argon');
-          //   })
-        });
+        })
+        .then(value => {
+          assert.equal(value, 'jimbo');
+        })
       });
-      describe('save to file', function() {
 
+      it('"Save As" should create a new file', () => {
+        let dst_file = Path.join(workdir, 'dst.lhtml');
+        return executeJavaScript(webview, function() {
+          return document.getElementById('theinput').setAttribute('value', 'garbage');
+        })
+        .then(() => {
+          setDialogAnswer(dst_file)
+          return saveAsFocusedDoc()
+        })
+        .then(() => {
+          // Should not have overwritten original
+          assert.doesNotContain(fs.readFileSync(Path.join(src_dir, 'index.html')),
+            'garbage');
+        })
+        .then(() => {
+          // Should have written new file
+          assert.contains(readFromZip(dst_file, './index.html'), 'garbage');
+        })
+        .then(() => {
+          return reloadFocusedDoc()
+        })
+        .then(() => {
+          // Should be using the new file
+          return executeJavaScript(webview, function() {
+            return document.getElementById('theinput').getAttribute('value')
+          })
+        })
+        .then(value => {
+          assert.equal(value, 'garbage');
+        })
       });
-      describe('save as', function() {
 
-      });
-      describe('save as template', function() {
-
+      it('"Save As Template" should make a template', () => {
+        let dst_file = Path.join(workdir, 'tmpl.lhtml');
+        return executeJavaScript(webview, function() {
+          return document.getElementById('theinput').setAttribute('value', 'horizon');
+        })
+        .then(() => {
+          setDialogAnswer(dst_file)
+          return saveTemplateFocusedDoc()
+        })
+        .then(() => {
+          // Should not have overwritten original
+          assert.doesNotContain(fs.readFileSync(Path.join(src_dir, 'index.html')),
+            'horizon')
+        })
+        .then(() => {
+          // Should have written new file
+          assert.contains(readFromZip(dst_file, './index.html'), 'horizon')
+        })
+        .then(() => {
+          return reloadFocusedDoc()
+        })
+        .then(() => {
+          // Should be using the old file
+          return executeJavaScript(webview, function() {
+            return document.getElementById('theinput').getAttribute('value')
+          })
+        })
+        .then(value => {
+          // Should have old value
+          assert.equal(value, null);
+        })
       });
     });
 
     describe('from LHTML file', function() {
-      describe('save', function() {
+      let src_file;
+      let src_dir;
+      let webview;
+      let container;
 
+      beforeEach(() => {
+        src_file = Path.join(workdir, 'src.lhtml');
+        src_dir = Path.join(workdir, 'src');
+        let zip = new AdmZip();
+        zip.addFile('./index.html', '<html><body><input id="theinput"></body></html>');
+        zip.writeZip(src_file);
+
+        return openDocument(src_file)
+        .then(result => {
+          webview = result.webview;
+          container = result.container;
+        })
+      })
+
+      it('"Save" should overwrite file', () => {
+        return executeJavaScript(webview, function() {
+          return document.getElementById('theinput').setAttribute('value', 'jimbo');
+        })
+        .then(() => {
+          return saveFocusedDoc()
+        })
+        .then(() => {
+          assert.contains(readFromZip(src_file, './index.html'), 'jimbo');
+        })
+        .then(() => {
+          reloadFocusedDoc()
+          return waitUntil(() => {
+            return webview.isLoading() === false;
+          });
+        })
+        .then(() => {
+          return executeJavaScript(webview, function() {
+            return document.getElementById('theinput').getAttribute('value')
+          })
+        })
+        .then(value => {
+          assert.equal(value, 'jimbo');
+        })
       });
-      describe('save as', function() {
 
+      it('"Save As" should create a new file', () => {
+        let dst_file = Path.join(workdir, 'dst.lhtml');
+        return executeJavaScript(webview, function() {
+          return document.getElementById('theinput').setAttribute('value', 'garbage');
+        })
+        .then(() => {
+          setDialogAnswer(dst_file)
+          return saveAsFocusedDoc()
+        })
+        .then(() => {
+          // Should not have overwritten original
+          assert.doesNotContain(readFromZip(src_file, './index.html'), 'garbage')
+        })
+        .then(() => {
+          // Should have written new file with data in it
+          assert.contains(readFromZip(dst_file, './index.html'), 'garbage')
+        })
+        .then(() => {
+          return reloadFocusedDoc()
+        })
+        .then(() => {
+          // Should be using the new file
+          return executeJavaScript(webview, function() {
+            return document.getElementById('theinput').getAttribute('value')
+          })
+        })
+        .then(value => {
+          assert.equal(value, 'garbage');
+        })
       });
-      describe('save as template', function() {
 
+      it('"Save As Template" should make a template', () => {
+        let dst_file = Path.join(workdir, 'tmpl.lhtml');
+        return executeJavaScript(webview, function() {
+          return document.getElementById('theinput').setAttribute('value', 'horizon');
+        })
+        .then(() => {
+          setDialogAnswer(dst_file)
+          return saveTemplateFocusedDoc()
+        })
+        .then(() => {
+          // Should not have overwritten original
+          assert.doesNotContain(fs.readFileSync(Path.join(src_dir, 'index.html')), 'horizon')
+        })
+        .then(() => {
+          // Should have written new file
+          assert.contains(readFromZip(dst_file, './index.html'), 'horizon')
+        })
+        .then(() => {
+          return reloadFocusedDoc()
+        })
+        .then(() => {
+          // Should be using the old file
+          return executeJavaScript(webview, function() {
+            return document.getElementById('theinput').getAttribute('value')
+          })
+        })
+        .then(value => {
+          // Should have old value
+          assert.equal(value, null);
+        })
       });
     });
   })
