@@ -338,10 +338,12 @@ function createLHTMLWindow() {
       });
       if (choice === 1) {
         ev.preventDefault();
+        win.close_promise && win.close_promise(false);
       }
     }
   })
   win.on('closed', () => {
+    win.close_promise && win.close_promise(true)
     let doc = WINDOW2DOC_INFO[win_id];
     if (!doc) {
       return;
@@ -517,7 +519,7 @@ app.on('open-file', function(event, path) {
 
 app.on('ready', function() {
   // Updates
-  if (process.env.CHECK_FOR_UPDATES === "no") {
+  if (process.env.CHECK_FOR_UPDATES === "no" || process.env.RUN_TESTS) {
     log.info('UPDATE CHECKING DISABLED');
   } else {
     updater.checkForUpdates();
@@ -735,7 +737,15 @@ function saveTemplateFocusedDoc() {
 function closeFocusedDoc() {
   let current = currentWindow();
   if (current) {
-    current.close();
+    return new Promise((resolve, reject) => {
+      current.close_promise = function(result) {
+        delete current.close_promise;
+        resolve(result);
+      };
+      current.close();
+    })
+  } else {
+    return Promise.resolve(false);
   }
 }
 
@@ -817,12 +827,17 @@ RPC.handlers = {
   }
 };
 
+module.exports = {
+  app,
+  openPath,
+  reloadFocusedDoc,
+  closeFocusedDoc,
+  saveFocusedDoc,
+  saveAsFocusedDoc,
+};
+
 // Test interface
-if (process.env.RUNNING_IN_SPECTRON) {
-  app.T_openPath = openPath;
-  app.T_saveFocusedDoc = saveFocusedDoc;
-  app.T_saveAsFocusedDoc = saveAsFocusedDoc;
-  app.T_close = closeFocusedDoc;
-  const {mock} = require('../test/mocks.js');
-  mock();
+if (process.env.RUN_TESTS) {
+  console.log('RUNNING TESTS');
+  require('../functest/e2e.js');
 }
