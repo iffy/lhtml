@@ -80,6 +80,15 @@ function openDocument(path) {
   })
 }
 
+function reloadDocument() {
+  reloadFocusedDoc()
+  return waitUntil(function() {
+    return _.filter(webContents.getAllWebContents(), wc => {
+      return wc.isLoading();
+    }).length === 0;
+  })
+}
+
 assert.contains = function(haystack, needle) {
   let assertion;
   if (haystack === null || needle === null) {
@@ -147,10 +156,7 @@ describe('app launch', function() {
             'jimbo');
         })
         .then(() => {
-          reloadFocusedDoc()
-          return waitUntil(() => {
-            return webview.isLoading() === false;
-          });
+          return reloadDocument()
         })
         .then(() => {
           return executeJavaScript(webview, function() {
@@ -181,7 +187,7 @@ describe('app launch', function() {
           assert.contains(readFromZip(dst_file, './index.html'), 'garbage');
         })
         .then(() => {
-          return reloadFocusedDoc()
+          return reloadDocument()
         })
         .then(() => {
           // Should be using the new file
@@ -213,7 +219,7 @@ describe('app launch', function() {
           assert.contains(readFromZip(dst_file, './index.html'), 'horizon')
         })
         .then(() => {
-          return reloadFocusedDoc()
+          return reloadDocument()
         })
         .then(() => {
           // Should be using the old file
@@ -259,10 +265,7 @@ describe('app launch', function() {
           assert.contains(readFromZip(src_file, './index.html'), 'jimbo');
         })
         .then(() => {
-          reloadFocusedDoc()
-          return waitUntil(() => {
-            return webview.isLoading() === false;
-          });
+          return reloadDocument()
         })
         .then(() => {
           return executeJavaScript(webview, function() {
@@ -292,7 +295,7 @@ describe('app launch', function() {
           assert.contains(readFromZip(dst_file, './index.html'), 'garbage')
         })
         .then(() => {
-          return reloadFocusedDoc()
+          return reloadDocument()
         })
         .then(() => {
           // Should be using the new file
@@ -316,14 +319,14 @@ describe('app launch', function() {
         })
         .then(() => {
           // Should not have overwritten original
-          assert.doesNotContain(fs.readFileSync(Path.join(src_dir, 'index.html')), 'horizon')
+          assert.doesNotContain(readFromZip(src_file, './index.html'), 'horizon')
         })
         .then(() => {
           // Should have written new file
           assert.contains(readFromZip(dst_file, './index.html'), 'horizon')
         })
         .then(() => {
-          return reloadFocusedDoc()
+          return reloadDocument()
         })
         .then(() => {
           // Should be using the old file
