@@ -1,5 +1,18 @@
 <!-- THIS FILE IS AUTOMATICALLY UPDATED. SEE THE README -->
-<!-- LAST COMMIT:ff17ce9c4051e84db005971525c4e3a98a72fe2c: -->
+<!-- LAST COMMIT:f7fe4ea900bb5ca3810d16126a4f9dc4eaffdb74: -->
+
+## v0.4.0
+
+- NEW:  Add 'New From Template...' menu option
+
+- NEW:  Add Save As Template
+
+- NEW:  menu items are enabled/disabled where pertinent
+
+-  Reduce logging noise and roll log file
+
+-  only send document-changed state when the state changes
+
 
 ### v0.3.5
 
