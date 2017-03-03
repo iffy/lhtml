@@ -172,7 +172,6 @@ window.addEventListener('load', ev => {
 // FileSystem stuff
 //---------------------------
 LHTML.fs = {};
-
 let chfs;
 let fs_attrs = [
   'writeFile',

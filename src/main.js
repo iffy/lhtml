@@ -902,18 +902,6 @@ RPC.handlers = {
       height: current[1],
     };
   },
-  listdir: (ctx, path) => {
-    return OPENDOCUMENTS[ctx.sender_id].chroot.listdir(path);
-  },
-  writeFile: (ctx, params) => {
-    return OPENDOCUMENTS[ctx.sender_id].chroot.writeFile(params.path, params.data);
-  },
-  readFile: (ctx, path) => {
-    return OPENDOCUMENTS[ctx.sender_id].chroot.readFile(path);
-  },
-  remove: (ctx, path) => {
-    return OPENDOCUMENTS[ctx.sender_id].chroot.remove(path);
-  }
 };
 
 module.exports = {

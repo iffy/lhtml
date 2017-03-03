@@ -138,7 +138,7 @@ class ChrootFS {
       ]),
     }
   }
-  writeFile(path, data) {
+  writeFile(path, data, ...args) {
     return this._getPath(path)
     .then(abspath => {
       // XXX check that the amount of data being written is okay.
@@ -161,11 +161,7 @@ class ChrootFS {
         })
       })
       .then(() => {
-        return new Promise((resolve, reject) => {
-          fs.writeFile(abspath, data, null, (err) => {
-            resolve(err);
-          });  
-        })
+        return fs.writeFileAsync(abspath, data, ...args);
       });
     });
   }
