@@ -609,6 +609,10 @@ app.on('ready', function() {
       // chrome-devtools requests are allowed
       // XXX Is this a security problem?
       callback({})
+    } else if (details.url.startsWith('blob:')) {
+      // blobs are allowed?
+      // XXX Is this a security problem?
+      callback({})
     } else {
       log.debug(`Document attempted ${details.method} ${details.url}`);
       callback({cancel: true});  
