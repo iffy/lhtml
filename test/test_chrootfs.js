@@ -186,6 +186,38 @@ describe('ChrootFS', function() {
         });
     });
   })
+
+  describe('fs', function() {
+    let chfs;
+    beforeEach(() => {
+      chfs = new ChrootFS(tmpdir);
+    })
+    describe('writeFile', function() {
+      it("allows writing a file asynchronously", () => {
+        return chfs.fs.writeFile('/a.txt', 'something')
+        .then(() => {
+          let contents = fs.readFileSync(Path.join(tmpdir, 'a.txt'))
+          assert.equal(contents, 'something');
+        })
+      })
+      it("allows choosing the encoding", () => {
+        return chfs.fs.writeFile('/a.txt', 'something', 'utf-8')
+        .then(() => {
+          let contents = fs.readFileSync(Path.join(tmpdir, 'a.txt'))
+          assert.equal(contents, 'something');
+        })
+      })
+      it("prevents large writes", () => {
+        chfs.maxBytes = 10;
+        return chfs.fs.writeFile('/a.txt', '123456789011')
+        .then(() => {
+          assert.equal(true, false, "Should have failed");
+        }, err => {
+          assert.equal(true, true, "Exception like expected");
+        })
+      })
+    })
+  })
 });
 
 
@@ -277,4 +309,5 @@ describe('safe_join', function() {
       });
     });
   });
+
 });

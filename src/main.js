@@ -412,6 +412,7 @@ class Document {
         log.info('extracting to', this._working_dir);
         zip.extractAllTo(this._working_dir, /*overwrite*/ true);  
       }
+      this.emitWorkingDir();
     }
     return this._working_dir;
   }
@@ -447,6 +448,9 @@ class Document {
       });
   }
   get window() {
+    if (_.isNil(this.window_id)) {
+      return null;
+    }
     return BrowserWindow.fromId(this.window_id);
   }
   _rpcGuest() {
@@ -454,6 +458,13 @@ class Document {
       throw new Error('No window');
     }
     return this.window.webContents;
+  }
+  emitWorkingDir() {
+    if (!this.window) {
+      return;
+    }
+    let guest = this._rpcGuest();
+    return RPC.call('set_chrootfs_root', this._working_dir, guest);
   }
   save() {
     if (!this.save_path) {
@@ -512,6 +523,7 @@ class Document {
           this._chroot = null;
           fs.copySync(this.save_path, this._working_dir) 
         }
+        this.emitWorkingDir();
       } else {
         if (new_is_directory) {
           log.debug('file -> dir');
@@ -851,6 +863,10 @@ RPC.handlers = {
     let win = BrowserWindow.fromId(window_id);
     win.setDocumentEdited(edited);
     return edited;
+  },
+  get_chrootfs_root: (ctx) => {
+    let doc = OPENDOCUMENTS[ctx.sender_id];
+    return doc.working_dir;
   },
   suggest_size: (ctx, size) => {
     let window_id = OPENDOCUMENTS[ctx.sender_id].window_id;

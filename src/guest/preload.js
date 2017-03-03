@@ -8,6 +8,7 @@ const {ipcRenderer} = require('electron');
 const {RPCService} = require('../rpc.js');
 const _ = require('lodash');
 const formsaving = require('./formsaving.js');
+const {ChrootFS} = require('../chrootfs.js');
 
 let LHTML = {};
 
@@ -38,6 +39,12 @@ RPC.handlers = {
       SAVING = true;
       return result;
     })
+  },
+  set_chrootfs_root: (ctx, new_root) => {
+    console.log('setting new root to', new_root);
+    if (chfs) {
+      chfs.setRoot(new_root);
+    }
   },
   emit_event: (ctx, data) => {
     var event = data.key;
@@ -165,33 +172,45 @@ window.addEventListener('load', ev => {
 // FileSystem stuff
 //---------------------------
 LHTML.fs = {};
-//
-//  Overwrite file
-//
-LHTML.fs.writeFile = (path, data) => {
-  return RPC.call('writeFile', {
-    path: path,
-    data: data,
+
+let chfs;
+let fs_attrs = [
+  'writeFile',
+  'readFile',
+  'remove',
+  'listdir',
+]
+let pending = {};
+_.each(fs_attrs, attr => {
+  pending[attr] = [];
+  LHTML.fs[attr] = (...args) => {
+    return new Promise((resolve, reject) => {
+      pending[attr].push({args, resolve, reject});
+    })
+  }
+})
+
+window.addEventListener('load', () => {
+  RPC.call('get_chrootfs_root')
+  .then(chrootfs_root => {
+    chfs = new ChrootFS(chrootfs_root);
+    _.each(fs_attrs, attr => {
+      LHTML.fs[attr] = (...args) => {
+        return chfs[attr](...args);
+      }
+      // Give an answer to all the pended ones
+      _.each(pending[attr], pended => {
+        let {args, resolve, reject} = pended;
+        try {
+          resolve(chfs[attr](...args))
+        } catch(err) {
+          reject(err);
+        }
+      })
+    })
+    delete pending;
   });
-}
-//
-//  Read the contents of a file.
-//
-LHTML.fs.readFile = (path) => {
-  return RPC.call('readFile', path);
-}
-//
-//  Delete a file/directory
-//
-LHTML.fs.remove = (path) => {
-  return RPC.call('remove', path);
-}
-//
-//  List contents of directory
-//
-LHTML.fs.listdir = (path) => {
-  return RPC.call('listdir', path);
-}
+})
 
 //
 // Suggest that the document be of a certain size (in pixels)
