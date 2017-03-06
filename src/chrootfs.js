@@ -48,6 +48,7 @@ function getDirSize(path) {
   })
 }
 
+
 class ChrootFS {
   constructor(path, options) {
     options = options || {};
@@ -83,60 +84,6 @@ class ChrootFS {
     .then(root => {
       return safe_join(root, relpath);
     });
-  }
-  get fs() {
-    let chrootcall = (func, arg_processors) => {
-      return (...options) => {
-        let args = Promise.resolve(options);
-        _.each(arg_processors, (processor) => {
-          args = args.then(new_args => {
-            return processor(new_args);
-          })
-        })
-        return args.then(new_args => {
-          return func(...new_args);
-        })
-      }
-    }
-    //
-    // Used to indicate that arg `idx` is a path name
-    // which should be converted to a chrooted pathname
-    //
-    let path_at = idx => {
-      return args => {
-        return this._getPath(args[idx])
-        .then(goodpath => {
-          args[idx] = goodpath;
-          return args;
-        })
-      }
-    }
-    //
-    // Used to indicate that arg `idx` is data to be written
-    // and should be prevented if it would exceed the max size
-    //
-    let inputdata_at = idx => {
-      return args => {
-        return getDirSize(this._root)
-        .then(size => {
-          let projected_size = size + args[idx].length;
-          if (projected_size > this.maxBytes) {
-            throw new TooBigError("This operation will exceed the max size of " + this.maxBytes);
-          } else {
-            return args;
-          }
-        })
-      }
-    }
-    return {
-      writeFile: chrootcall(fs.writeFileAsync, [
-        path_at(0),
-        inputdata_at(1),
-      ]),
-      readFile: chrootcall(fs.readFileAsync, [
-        path_at(0),
-      ]),
-    }
   }
   writeFile(path, data, ...args) {
     return this._getPath(path)
