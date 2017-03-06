@@ -106,7 +106,9 @@ window.LHTML && LHTML.fs.listdir().then(function(items) {
 
 ### `fs.readFile(...)`
 
-Read an entire file's contents into a string.
+Same as [Node's `fs.readFile`](https://nodejs.org/api/fs.html#fs_fs_readfile_file_options_callback) except that it returns a Promise.
+
+Read an entire file's contents.
 
 Usage:
 
@@ -131,7 +133,13 @@ window.LHTML && LHTML.fs.remove('foo.txt').then(function() {
 
 ### `fs.writeFile(...)`
 
-Overwrite a file, creating it if necessary.  Also, any subdirectories needed will be created.  **You must call `saving.save()` afterward if you want the writing to be permanent.**
+Same as [Node's `fs.writeFile`](https://nodejs.org/api/fs.html#fs_fs_writefile_file_data_options_callback) except:
+
+- it returns a Promise
+- if the directory of the file doesn't exist, it it created first
+- it limits the size of what you can write
+
+**You must call `saving.save()` afterward if you want the writing to be permanent.**
 
 Usage:
 

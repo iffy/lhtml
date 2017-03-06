@@ -165,18 +165,10 @@ class ChrootFS {
       });
     });
   }
-  readFile(path) {
+  readFile(path, ...args) {
     return this._getPath(path)
     .then(abspath => {
-      return new Promise((resolve, reject) => {
-        fs.readFile(abspath, 'utf8', (err, data) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(data);
-          }
-        }); 
-      })
+      return fs.readFileAsync(abspath, ...args);
     })
   }
   listdir() {

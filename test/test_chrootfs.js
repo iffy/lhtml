@@ -22,9 +22,10 @@ describe('ChrootFS', function() {
       let chfs = new ChrootFS(tmpdir);
       return chfs.writeFile('hello', 'some contents')
       .then(result => {
-        return chfs.readFile('hello');
+        return chfs.readFile('hello', 'utf8');
       })
       .then(contents => {
+        console.log('contents', contents);
         assert.equal(contents, 'some contents');
         assert.equal(typeof contents, 'string');
       });
@@ -34,7 +35,7 @@ describe('ChrootFS', function() {
       let chfs = new ChrootFS(tmpdir);
       return chfs.writeFile('a/b/c/hello', 'goober')
       .then(result => {
-        return chfs.readFile('a/b/c/hello');
+        return chfs.readFile('a/b/c/hello', 'utf8');
       })
       .then(contents => {
         assert.equal(contents, 'goober');
