@@ -136,7 +136,7 @@ window.LHTML && LHTML.fs.remove('foo.txt').then(function() {
 Same as [Node's `fs.writeFile`](https://nodejs.org/api/fs.html#fs_fs_writefile_file_data_options_callback) except:
 
 - it returns a Promise
-- if the directory of the file doesn't exist, it it created first
+- if the directory of the file doesn't exist, it is created
 - it limits the size of what you can write
 
 **You must call `saving.save()` afterward if you want the writing to be permanent.**
