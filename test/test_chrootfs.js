@@ -22,7 +22,7 @@ describe('ChrootFS', function() {
       let chfs = new ChrootFS(tmpdir);
       return chfs.writeFile('hello', 'some contents')
       .then(result => {
-        return chfs.readFile('hello');
+        return chfs.readFile('hello', 'utf8');
       })
       .then(contents => {
         assert.equal(contents, 'some contents');
@@ -34,7 +34,7 @@ describe('ChrootFS', function() {
       let chfs = new ChrootFS(tmpdir);
       return chfs.writeFile('a/b/c/hello', 'goober')
       .then(result => {
-        return chfs.readFile('a/b/c/hello');
+        return chfs.readFile('a/b/c/hello', 'utf8');
       })
       .then(contents => {
         assert.equal(contents, 'goober');
@@ -111,42 +111,107 @@ describe('ChrootFS', function() {
   });
 
   describe('.listdir', function() {
-    it('lists recursively by default', () => {
-      let chfs = new ChrootFS(tmpdir);
+    beforeEach(function() {
       fs.writeFileSync(Path.join(tmpdir, 'a.txt'), 'a contents');
       fs.writeFileSync(Path.join(tmpdir, 'b.txt'), 'b contents');
       fs.ensureDirSync(Path.join(tmpdir, 'sub'))
       fs.writeFileSync(Path.join(tmpdir, 'sub/c.txt'), 'c contents');
       fs.writeFileSync(Path.join(tmpdir, 'sub/d.txt'), 'd contents');
+    })
+    it('lists recursively by default', () => {
+      let chfs = new ChrootFS(tmpdir);
       return chfs.listdir()
-        .then(contents => {
-          assert.equal(contents.length, 5);
-          _.each(contents, file => {
-            if (file.name === 'a.txt') {
-              assert.equal(file.path, 'a.txt');
-              assert.equal(file.dir, '');
-              assert.equal(file.size, 'a contents'.length);
-            } else if (file.name === 'b.txt') {
-              assert.equal(file.path, 'b.txt');
-              assert.equal(file.dir, '');
-              assert.equal(file.size, 'b contents'.length);
-            } else if (file.name === 'sub') {
-              assert.equal(file.path, 'sub');
-              assert.equal(file.dir, '');
-              assert.equal(file.isdir, true);
-            } else if (file.name === 'c.txt') {
-              assert.equal(file.path, 'sub/c.txt');
-              assert.equal(file.dir, 'sub');
-              assert.equal(file.size, 'c contents'.length);
-            } else if (file.name === 'd.txt') {
-              assert.equal(file.path, 'sub/d.txt');
-              assert.equal(file.dir, 'sub');
-              assert.equal(file.size, 'd contents'.length);
-            } else {
-              assert.equal(true, false, "Unexpected file: " + file.name);
-            }
-          })
-        });
+      .then(contents => {
+        assert.equal(contents.length, 5);
+        _.each(contents, file => {
+          if (file.name === 'a.txt') {
+            assert.equal(file.path, 'a.txt');
+            assert.equal(file.dir, '');
+            assert.equal(file.size, 'a contents'.length);
+          } else if (file.name === 'b.txt') {
+            assert.equal(file.path, 'b.txt');
+            assert.equal(file.dir, '');
+            assert.equal(file.size, 'b contents'.length);
+          } else if (file.name === 'sub') {
+            assert.equal(file.path, 'sub');
+            assert.equal(file.dir, '');
+            assert.equal(file.isdir, true);
+          } else if (file.name === 'c.txt') {
+            assert.equal(file.path, 'sub/c.txt');
+            assert.equal(file.dir, 'sub');
+            assert.equal(file.size, 'c contents'.length);
+          } else if (file.name === 'd.txt') {
+            assert.equal(file.path, 'sub/d.txt');
+            assert.equal(file.dir, 'sub');
+            assert.equal(file.size, 'd contents'.length);
+          } else {
+            assert.equal(true, false, "Unexpected file: " + file.name);
+          }
+        })
+      });
+    })
+
+    it('can list a subdir', () => {
+      let chfs = new ChrootFS(tmpdir);
+      return chfs.listdir('sub')
+      .then(contents => {
+        assert.equal(contents.length, 2)
+        _.each(contents, file => {
+          if (file.name === 'c.txt') {
+            assert.equal(file.path, 'c.txt')
+            assert.equal(file.dir, '');
+          } else if (file.name === 'd.txt') {
+            assert.equal(file.path, 'd.txt')
+            assert.equal(file.dir, '');
+          } else {
+            assert.equal(true, false, "Unexpected file: " + file.name);
+          }
+        })
+      })
+    })
+
+    it('can run non-recursively', () => {
+      let chfs = new ChrootFS(tmpdir);
+      return chfs.listdir({recursive:false})
+      .then(contents => {
+        assert.equal(contents.length, 3);
+        _.each(contents, file => {
+          if (file.name === 'a.txt') {
+            assert.equal(file.path, 'a.txt');
+            assert.equal(file.dir, '');
+            assert.equal(file.size, 'a contents'.length);
+          } else if (file.name === 'b.txt') {
+            assert.equal(file.path, 'b.txt');
+            assert.equal(file.dir, '');
+            assert.equal(file.size, 'b contents'.length);
+          } else if (file.name === 'sub') {
+            assert.equal(file.path, 'sub');
+            assert.equal(file.dir, '');
+            assert.equal(file.isdir, true);
+          } else {
+            assert.equal(true, false, "Unexpected file: " + file.name);
+          }
+        })
+      })
+    })
+
+    it('can run non-recursively on subdir', () => {
+      let chfs = new ChrootFS(tmpdir);
+      return chfs.listdir('sub', {recursive:false})
+      .then(contents => {
+        assert.equal(contents.length, 2);
+        _.each(contents, file => {
+          if (file.name === 'c.txt') {
+            assert.equal(file.path, 'c.txt')
+            assert.equal(file.dir, '');
+          } else if (file.name === 'd.txt') {
+            assert.equal(file.path, 'd.txt')
+            assert.equal(file.dir, '');
+          } else {
+            assert.equal(true, false, "Unexpected file: " + file.name);
+          }
+        })
+      })
     })
   });
 
@@ -277,4 +342,5 @@ describe('safe_join', function() {
       });
     });
   });
+
 });

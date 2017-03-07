@@ -70,21 +70,26 @@ LHTML viewers provide a small JavaScript API to `index.html` files within the `L
 
 | Function/Variable | Short description |
 |---|---|
-| [`fs.listdir()`](#fslistdir) | List contents of the zip |
+| [`fs.listdir(...)`](#fslistdir) | List contents of the zip |
 | [`fs.readFile(...)`](#fsreadfile) | Read a file from the document zip |
 | [`fs.remove(...)`](#fsremove) | Remove a file/dir from the document zip |
 | [`fs.writeFile(...)`](#fswritefile) | Overwrite a file within the document zip |
 | [`on(...)`](#on) | Listen for events |
-| [`saving.defaultSaver`](#savingdefaultsaver) | The function that will be used for saving if `registerSaver` isn't called |
-| [`saving.disableFormSaving()`](#savingdisableformsaving) | Called to disable automatic form saving |
-| [`saving.registerSaver(...)`](#savingregistersaver) | Register a function to determine how the document is saved |
-| [`saving.save()`](#savingsave) | Programatically start saving the current document |
-| [`saving.setDocumentEdited(...)`](#savingsetdocumentedited) | Indicate that there are changes to be saved |
 | [`suggestSize(...)`](#suggestsize) | Attempt to resize the document's window |
 
-### `fs.listdir()`
+### `fs.listdir(...)`
 
-List the full contents of the LHTML zip file.  Returns a list of objects with the following members:
+List the full contents of the LHTML zip file.  
+
+Spec: `fs.listdir([path,] [options])`
+
+| Parameter | Description |
+|---|---|
+| `path` | Path (relative to document zip root) to list.  Defaults to `/` |
+| `options` | Object of options |
+| `options.recursive` | If `true` (the default) then recursively list the directory tree. |
+
+Returns a list of objects with the following members:
 
 | Key | Description |
 |---|---|
@@ -106,7 +111,9 @@ window.LHTML && LHTML.fs.listdir().then(function(items) {
 
 ### `fs.readFile(...)`
 
-Read an entire file's contents into a string.
+Same as [Node's `fs.readFile`](https://nodejs.org/api/fs.html#fs_fs_readfile_file_options_callback) except that it returns a Promise.
+
+Read an entire file's contents.
 
 Usage:
 
@@ -118,6 +125,8 @@ window.LHTML && LHTML.fs.readFile('something.txt').then(function(contents) {
 ```
 
 ### `fs.remove(...)`
+
+Spec: `fs.remove(path)`
 
 Delete a file/directory from the zipfile.  **You must call `saving.save()` afterward if you want the deletion to be permanent.**
 
@@ -131,7 +140,13 @@ window.LHTML && LHTML.fs.remove('foo.txt').then(function() {
 
 ### `fs.writeFile(...)`
 
-Overwrite a file, creating it if necessary.  Also, any subdirectories needed will be created.  **You must call `saving.save()` afterward if you want the writing to be permanent.**
+Same as [Node's `fs.writeFile`](https://nodejs.org/api/fs.html#fs_fs_writefile_file_data_options_callback) except:
+
+- it returns a Promise
+- if the directory of the file doesn't exist, it is created
+- it limits the size of what you can write
+
+**You must call `saving.save()` afterward if you want the writing to be permanent.**
 
 Usage:
 
@@ -140,12 +155,6 @@ window.LHTML && LHTML.fs.writeFile('foo.txt', 'guts').then(function() {
     return LHTML.save();
 });
 ```
-
-### `saving.defaultSaver`
-
-This is the saving function used by default (if none is provided by calling `saving.registerSaver`).  It will take the current state of `index.html` and overwrite `index.html` within the LHTML zip.
-
-For usage, see `saving.registerSaver`'s usage.
 
 
 ### `suggestSize(...)`

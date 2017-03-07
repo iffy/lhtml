@@ -1,5 +1,5 @@
 <!-- THIS FILE IS AUTOMATICALLY UPDATED. SEE THE README -->
-<!-- LAST COMMIT:f7fe4ea900bb5ca3810d16126a4f9dc4eaffdb74: -->
+
 
 ## v0.4.0
 

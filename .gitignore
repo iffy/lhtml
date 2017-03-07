@@ -2,3 +2,4 @@ node_modules/
 dist/
 samples/filesystem/thedate.txt
 .DS_Store
+_CHANGELOG.md

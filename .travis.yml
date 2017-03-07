@@ -7,7 +7,9 @@ language: node_js
 node_js:
   - '7'
 
-script: ./test/runtests.sh
+script:
+  - ./test/runtests.sh
+  - ./test/checkforchanges.sh
 
 cache:
   yarn: true
