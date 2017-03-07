@@ -1,4 +1,6 @@
+var Promise = require("bluebird");
 var fs = require('fs-extra');
+Promise.promisifyAll(fs);
 var Path = require('path');
 const klaw = require('klaw');
 const _ = require('lodash');
@@ -46,12 +48,17 @@ function getDirSize(path) {
   })
 }
 
+
 class ChrootFS {
   constructor(path, options) {
     options = options || {};
     this._root = null;
     this._tmp_root = Path.resolve(path);
     this.maxBytes = options.maxBytes || (10 * 2 ** 20);
+  }
+  setRoot(path) {
+    this._root = null;
+    this._tmp_root = path;
   }
   _getRoot() {
     if (this._root) {
@@ -78,7 +85,7 @@ class ChrootFS {
       return safe_join(root, relpath);
     });
   }
-  writeFile(path, data) {
+  writeFile(path, data, ...args) {
     return this._getPath(path)
     .then(abspath => {
       // XXX check that the amount of data being written is okay.
@@ -101,26 +108,14 @@ class ChrootFS {
         })
       })
       .then(() => {
-        return new Promise((resolve, reject) => {
-          fs.writeFile(abspath, data, null, (err) => {
-            resolve(err);
-          });  
-        })
+        return fs.writeFileAsync(abspath, data, ...args);
       });
     });
   }
-  readFile(path) {
+  readFile(path, ...args) {
     return this._getPath(path)
     .then(abspath => {
-      return new Promise((resolve, reject) => {
-        fs.readFile(abspath, 'utf8', (err, data) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(data);
-          }
-        }); 
-      })
+      return fs.readFileAsync(abspath, ...args);
     })
   }
   listdir() {
