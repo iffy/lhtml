@@ -1,0 +1,1 @@
+Changes for the CHANGELOG are now sourced from files rather than from git commit messages.
