@@ -7,7 +7,7 @@
 const {ipcRenderer} = require('electron');
 const {RPCService} = require('../rpc.js');
 const _ = require('lodash');
-const formsaving = require('./formsaving.js');
+const formsync = require('./formsync.js');
 const {ChrootFS} = require('../chrootfs.js');
 
 let LHTML = {};
@@ -27,17 +27,17 @@ RPC.handlers = {
   echo: (ctx, data) => {
     return 'echo:' + data;
   },
-  get_save_data: (ctx, data) => {
+  save_your_stuff: (ctx, data) => {
     var p;
-    if (SAVER) {
-      p = Promise.resolve(SAVER());
+    if (LHTML.saving.onBeforeSave) {
+      p = Promise.resolve(LHTML.saving.onBeforeSave());
     } else {
       p = Promise.resolve({})
     }
-    return p.then(result => {
+    return p.then(() => {
       TMP_DOC_EDITED = false;
       SAVING = true;
-      return result;
+      return;
     })
   },
   set_chrootfs_root: (ctx, new_root) => {
@@ -75,13 +75,56 @@ LHTML.on = (event, handler) => {
 }
 
 //---------------------------
+// FileSystem stuff
+//---------------------------
+LHTML.fs = {};
+let chfs;
+let fs_attrs = [
+  'writeFile',
+  'readFile',
+  'remove',
+  'listdir',
+]
+let pending = {};
+_.each(fs_attrs, attr => {
+  pending[attr] = [];
+  LHTML.fs[attr] = (...args) => {
+    return new Promise((resolve, reject) => {
+      pending[attr].push({args, resolve, reject});
+    })
+  }
+})
+
+window.addEventListener('load', () => {
+  RPC.call('get_chrootfs_root')
+  .then(chrootfs_root => {
+    chfs = new ChrootFS(chrootfs_root);
+    _.each(fs_attrs, attr => {
+      LHTML.fs[attr] = (...args) => {
+        return chfs[attr](...args);
+      }
+      // Give an answer to all the pended ones
+      _.each(pending[attr], pended => {
+        let {args, resolve, reject} = pended;
+        try {
+          resolve(chfs[attr](...args))
+        } catch(err) {
+          reject(err);
+        }
+      })
+    })
+    delete pending;
+  });
+})
+
+//---------------------------
 // Saving stuff
 //---------------------------
 LHTML.saving = {};
 //
-//  The default SAVER will emit the current content of the html page.
+// Perform any writing that needs to happen before saving.
 //
-LHTML.saving.defaultSaver = () => {
+LHTML.saving.onBeforeSave = () => {
   // Thanks http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript/10162353#10162353
   let doctype = '';
   let node = document.doctype;
@@ -93,18 +136,8 @@ LHTML.saving.defaultSaver = () => {
       + (node.systemId ? ' "' + node.systemId + '"' : '')
       + '>';
   }
-  return {
-    'index.html': doctype + document.documentElement.outerHTML,
-  };
-}
-let SAVER = LHTML.saving.defaultSaver;
-//
-//  Register the function to be called when the user requests to Save.
-//  The function should return an object with filenames as keys and contents
-//  as the value for any files that should be completely overwritten.
-//
-LHTML.saving.registerSaver = (func) => {
-  SAVER = func;
+  return LHTML.fs.writeFile('/index.html',
+    doctype + document.documentElement.outerHTML)
 }
 //
 //  Save the current file.
@@ -152,64 +185,21 @@ LHTML.on('save-failed', () => {
 })
 
 //
-// form-saving default
+// form-sync default
 //
-let form_saving_enabled = true;
-LHTML.saving.disableFormSaving = () => {
-  form_saving_enabled = false;
-  formsaving.disable();
+let form_sync_enabled = true;
+LHTML.saving.disableFormSync = () => {
+  form_sync_enabled = false;
+  formsync.disable();
 }
 window.addEventListener('load', ev => {
-  if (form_saving_enabled) {
-    formsaving.enable();
-    formsaving.onChange((element, value) => {
+  if (form_sync_enabled) {
+    formsync.enable();
+    formsync.onChange((element, value) => {
       LHTML.saving.setDocumentEdited(true);
     })
   }
 });
-
-//---------------------------
-// FileSystem stuff
-//---------------------------
-LHTML.fs = {};
-let chfs;
-let fs_attrs = [
-  'writeFile',
-  'readFile',
-  'remove',
-  'listdir',
-]
-let pending = {};
-_.each(fs_attrs, attr => {
-  pending[attr] = [];
-  LHTML.fs[attr] = (...args) => {
-    return new Promise((resolve, reject) => {
-      pending[attr].push({args, resolve, reject});
-    })
-  }
-})
-
-window.addEventListener('load', () => {
-  RPC.call('get_chrootfs_root')
-  .then(chrootfs_root => {
-    chfs = new ChrootFS(chrootfs_root);
-    _.each(fs_attrs, attr => {
-      LHTML.fs[attr] = (...args) => {
-        return chfs[attr](...args);
-      }
-      // Give an answer to all the pended ones
-      _.each(pending[attr], pended => {
-        let {args, resolve, reject} = pended;
-        try {
-          resolve(chfs[attr](...args))
-        } catch(err) {
-          reject(err);
-        }
-      })
-    })
-    delete pending;
-  });
-})
 
 //
 // Suggest that the document be of a certain size (in pixels)
