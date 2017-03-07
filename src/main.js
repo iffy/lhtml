@@ -84,6 +84,17 @@ let template = [{
       click() {
         return openDirectory();
       }
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: 'Export As PDF...',
+      accelerator: 'CmdOrCtrl+P',
+      doc_only: true,
+      click() {
+        return printToPDF();
+      }
     }
   ]
 },
@@ -558,6 +569,9 @@ app.on('open-file', function(event, path) {
 })
 
 let menu;
+//
+// Go through the menu template and find all the menu item
+// labels that have `doc_only` set to `true`
 function getDocOnlyMenuItems(templ) {
   return _(templ)
   .map((item) => {
@@ -834,6 +848,35 @@ function closeFocusedDoc() {
   }
 }
 
+
+function printToPDF() {
+  let webview = currentWebViewWebContents();
+  if (webview) {
+    webview.printToPDF({
+      printBackground: true,
+    }, (err, data) => {
+      if (err) throw err;
+      dialog.showSaveDialog({
+        filters: [
+          {name: 'PDF', extensions: ['pdf']},
+          {name: 'All Files', extensions: ['*']},
+        ],
+      }, dst => {
+        if (!dst) {
+          return;
+        }
+        fs.writeFile(dst, data, err => {
+          if (err) throw err;
+          log.debug('wrote PDF', dst);
+        })
+      });
+      
+    })
+  }
+}
+
+
+
 function toggleMainDevTools() {
   currentWindow().toggleDevTools();
 }
@@ -845,6 +888,12 @@ function toggleDocumentDevTools() {
 function currentWindow() {
   let win = BrowserWindow.getFocusedWindow();
   return win;
+}
+function currentWebViewWebContents() {
+  let win = BrowserWindow.getFocusedWindow();
+  return _.find(webContents.getAllWebContents(), wc => {
+    return wc.hostWebContents === win.webContents;
+  })
 }
 
 let RPC = new RPCService(ipcMain);
