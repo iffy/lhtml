@@ -450,13 +450,7 @@ class Document {
   }
   _updateWorkingDirFromSaveData() {
     let guest = this._rpcGuest();
-    return RPC.call('get_save_data', null, guest)
-      .then((save_data) => {
-        let saves = _.map(save_data, (guts, filename) => {
-          return this.chroot.writeFile(filename, guts);
-        });
-        return Promise.all(saves);
-      });
+    return RPC.call('save_your_stuff', null, guest);
   }
   get window() {
     if (_.isNil(this.window_id)) {
