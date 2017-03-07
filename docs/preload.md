@@ -10,13 +10,14 @@ LHTML namespace.
         * [.defaultSaver()](#LHTML.saving.defaultSaver) ⇒ <code>Object</code>
         * [.registerSaver(func)](#LHTML.saving.registerSaver)
         * [.save()](#LHTML.saving.save) ⇒ <code>Promise</code>
+        * [.setDocumentEdited(edited)](#LHTML.saving.setDocumentEdited)
         * [.disableFormSaving()](#LHTML.saving.disableFormSaving)
     * [.on(event, handler)](#LHTML.on)
 
 <a name="LHTML.saving"></a>
 
 ### LHTML.saving : <code>object</code>
-LHTML.saving
+Saving-related functions.  See also [LHTML.fs](LHTML.fs).
 
 **Kind**: static namespace of <code>[LHTML](#LHTML)</code>  
 
@@ -24,6 +25,7 @@ LHTML.saving
     * [.defaultSaver()](#LHTML.saving.defaultSaver) ⇒ <code>Object</code>
     * [.registerSaver(func)](#LHTML.saving.registerSaver)
     * [.save()](#LHTML.saving.save) ⇒ <code>Promise</code>
+    * [.setDocumentEdited(edited)](#LHTML.saving.setDocumentEdited)
     * [.disableFormSaving()](#LHTML.saving.disableFormSaving)
 
 <a name="LHTML.saving.defaultSaver"></a>
@@ -70,6 +72,37 @@ Initiate a save of the current file.
 **Kind**: static method of <code>[saving](#LHTML.saving)</code>  
 **Returns**: <code>Promise</code> - A promise that will fire once the document has been
                        successfully saved.  
+<a name="LHTML.saving.setDocumentEdited"></a>
+
+#### saving.setDocumentEdited(edited)
+Indicate that the document has unsaved changes.
+
+If form-saving is enabled (which it is by default)
+then document edited state is handled automatically.
+This function is mostly useful for documents with
+form-saving disabled.
+
+Calling this function sets the edited state
+of the current document.  Before closing an edited document,
+the application will prompt the user to save.
+
+Call this with `true` to prevent closing without a prompt.
+Call this with `false` if there are no changes to be saved.
+
+Also, every time a document is saved, the edited state is automatically reset to `false`.
+
+**Kind**: static method of <code>[saving](#LHTML.saving)</code>  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| edited | <code>boolean</code> | Status to set |
+
+**Example**  
+```js
+<script>
+  window.LHTML && LHTML.saving.setDocumentEdited(true);
+</script>
+```
 <a name="LHTML.saving.disableFormSaving"></a>
 
 #### saving.disableFormSaving()

@@ -9,22 +9,21 @@
     "test": "test/runtests.sh",
     "pack": "build --dir",
     "dist": "build",
-    "postinstall": "install-app-deps"
+    "postinstall": "install-app-deps",
+    "docs": "jsdoc2md src/guest/preload.js > docs/preload.md"
   },
   "devDependencies": {
     "electron": "^1.6.0",
     "electron-builder": "^13.6.0",
     "electron-packager": "^8.5.0",
-    "esdoc": "^0.5.2",
     "mocha": "^3.2.0"
   },
   "dependencies": {
     "adm-zip": "^0.4.7",
-    "documentation": "^4.0.0-beta.18",
     "electron-log": "^1.3.0",
     "electron-updater": "^1.6.4",
     "fs-extra": "^2.0.0",
-    "jsdoc": "^3.4.3",
+    "jsdoc-to-markdown": "^3.0.0",
     "klaw": "^1.3.1",
     "lodash": "^4.17.4",
     "tmp": "0.0.31"

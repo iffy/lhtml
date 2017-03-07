@@ -66,7 +66,7 @@ LHTML files are not allowed to access resources over the network.  This is inten
 
 ## API
 
-LHTML viewers provide a small JavaScript API to `index.html` files within the `LHTML` object.  Available endpoints are described here:
+LHTML viewers provide a small JavaScript API to `index.html` files within the `LHTML` object.  Available endpoints are described in the generated [docs](docs/preload.md).
 
 | Function/Variable | Short description |
 |---|---|
@@ -141,105 +141,12 @@ window.LHTML && LHTML.fs.writeFile('foo.txt', 'guts').then(function() {
 });
 ```
 
-### `on(...)`
-
-`on(event, handler)`
-
-Listen for one of these events:
-
-- `saved` - emitted after the document has been saved.  The handler is called with no arguments.
-- `save-failed` - emitted if an attempted save fails.  The handler is called with a string description.
-
-Usage:
-
-```javascript
-window.LHTML && LHTML.on('saved', function() {
-    console.log('The file was saved!');
-})
-window.LHTML && LHTML.on('save-failed', function() {
-    console.log('Save failed :(');
-})
-```
-
 ### `saving.defaultSaver`
 
 This is the saving function used by default (if none is provided by calling `saving.registerSaver`).  It will take the current state of `index.html` and overwrite `index.html` within the LHTML zip.
 
 For usage, see `saving.registerSaver`'s usage.
 
-### `saving.disableFormSaving()`
-
-A common use case for LHTML files is to email a form to be filled out.  By default data entered into forms will be saved.  If you want to disable this (because you're using a framework like React or Angular) call `saving.disableFormSaving()`.
-
-Usage:
-
-```html
-<body>
-    <!-- disable form saving -->
-    <script>window.LHTML && LHTML.saving.disableFormSaving();</script>
-    Name: <input name="name">
-    Email: <input type="email" name="email">
-    Favorite color: <select>
-        <option>Red</option>
-        <option>Blue</option>
-    </select>
-</body>
-```
-
-
-### `saving.registerSaver(...)`
-
-`saving.registerSaver(func)`
-
-Registers a function to be called when the application is to be saved.  By default `saving.defaultSaver` is used.
-
-The registered function is expected to return on object whose keys are filenames and whose values are file contents.
-
-Usage:
-
-```html
-<script>
-// Register a saver that will save index.html in its current state
-// and write some data to somedata.json within the LHTML zip.
-window.LHTML && LHTML.saving.registerSaver(function() {
-    var files = LHTML.saving.defaultSaver();
-    files['somedata.json'] = '{"foo": "bar"}';
-    return files;
-})
-</script>
-```
-
-### `saving.save()`
-
-Saves the current file.  See `saving.registerSaver` for more info.
-
-Usage:
-
-```html
-<script>
-window.LHTML && LHTML.saving.save().then(function() {
-    console.log('saved');
-})
-</script>
-```
-
-### `saving.setDocumentEdited(...)`
-
-`saving.setDocumentEdited(value)`
-
-If form-saving is enabled (which it is by default and unless `saving.disableFormSaving()` is called) then document edited state is handled automatically.  This function is mostly useful for documents with form-saving disabled.
-
-Calling this function sets the edited state of the current document.  Before closing an edited document, the application will prompt to save.  Set this to `true` to prevent closing without a prompt.  Set to `false` if there are no changes to be saved.
-
-Also, every time a document is saved, the edited state is automatically reset to `false`.
-
-Usage:
-
-```html
-<script>
-window.LHTML && LHTML.saving.setDocumentEdited(true);
-</script>
-```
 
 ### `suggestSize(...)`
 
@@ -285,6 +192,13 @@ To run the application in development mode do:
 
     yarn install
     node_modules/.bin/electron .
+
+# Generating docs
+
+To generate the JS API docs (which live in `docs/`) do:
+
+    yarn
+    yarn docs
 
 # Packaging
 

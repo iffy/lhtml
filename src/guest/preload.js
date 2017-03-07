@@ -101,7 +101,7 @@ LHTML.on = (event, handler) => {
 //---------------------------
 
 /**
- * LHTML.saving
+ * Saving-related functions.  See also {@link LHTML.fs}.
  *
  * @namespace
  */
@@ -137,9 +137,11 @@ LHTML.saving.defaultSaver = () => {
 let SAVER = LHTML.saving.defaultSaver;
 
 /**
- * Registers a function to be called when the application is to be saved.  By default {@link LHTML.saving.defaultSaver} is used.
+ * Registers a function to be called when the application is to be saved.
+ * By default {@link LHTML.saving.defaultSaver} is used.
  * 
- * The registered function is expected to return on object whose keys are filenames and whose values are file contents.
+ * The registered function is expected to return on object whose keys
+ * are filenames and whose values are file contents.
  * 
  * @example
  * // Register a saver that will save index.html in its current state
@@ -159,6 +161,11 @@ LHTML.saving.registerSaver = (func) => {
 /**
  * Initiate a save of the current file.
  *
+ * @example
+ * window.LHTML && LHTML.saving.save().then(function() {
+ *     console.log('saved');
+ * })
+ *
  * @return     {Promise}  A promise that will fire once the document has been
  *                        successfully saved.
  */
@@ -168,6 +175,28 @@ LHTML.saving.save = () => {
 let DOC_EDITED = false;
 let TMP_DOC_EDITED = false;
 let SAVING = false;
+/**
+ * Indicate that the document has unsaved changes.
+ *
+ * If form-saving is enabled (which it is by default)
+ * then document edited state is handled automatically.
+ * This function is mostly useful for documents with
+ * form-saving disabled.
+ * 
+ * Calling this function sets the edited state
+ * of the current document.  Before closing an edited document,
+ * the application will prompt the user to save.
+ * 
+ * Call this with `true` to prevent closing without a prompt.
+ * Call this with `false` if there are no changes to be saved.
+ * 
+ * Also, every time a document is saved, the edited state is automatically reset to `false`.
+ *
+ * @example
+ * window.LHTML && LHTML.saving.setDocumentEdited(true);
+ *
+ * @param {boolean} edited - Status to set
+ */
 LHTML.saving.setDocumentEdited = (edited) => {
   edited = !!edited;
   if (SAVING) {
@@ -204,11 +233,7 @@ LHTML.on('save-failed', () => {
   RPC.call('set_document_edited', DOC_EDITED);
 })
 
-//
-// form-saving default
-//
 let form_saving_enabled = true;
-
 /**
  * Disables form saving.
  *
@@ -245,10 +270,13 @@ window.addEventListener('load', ev => {
 //---------------------------
 // FileSystem stuff
 //---------------------------
+/**
+ * File system functions.  See also {@link LHTML.saving}.
+ *
+ * @namespace
+ */
 LHTML.fs = {};
-//
-//  Overwrite file
-//
+
 LHTML.fs.writeFile = (path, data) => {
   return RPC.call('writeFile', {
     path: path,
