@@ -123,7 +123,7 @@ For usage, see `saving.registerSaver`'s usage.
 
 ### `saving.disableFormSaving()`
 
-A common use case for LHTML files is to email a form to be filled out.  By default data entered into forms will be saved.  If you want to disable this (because you're using a framework like React or Angular) call `saving.disableFormSaving()`.
+A common use case for LHTML files is to present a form to be filled out.  Therefore, by default data entered into forms will be saved.  If you want to disable this automatic saving (because you're using a framework like React or Angular) call `saving.disableFormSaving()`.
 
 Usage:
 
