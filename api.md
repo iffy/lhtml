@@ -170,7 +170,9 @@ if (window.LHTML) {
 
 ### `saving.save()`
 
-Saves the current file.  See `saving.registerSaver` for more info.
+Initiates a save of the current file.  Returns a Promise that fires when the save is finished
+
+See `saving.onBeforeSave` for more info.
 
 Usage:
 
