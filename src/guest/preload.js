@@ -318,7 +318,6 @@ window.addEventListener('load', () => {
         }
       })
     })
-    delete pending;
   });
 })
 

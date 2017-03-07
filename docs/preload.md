@@ -12,12 +12,13 @@ LHTML namespace.
         * [.save()](#LHTML.saving.save) ⇒ <code>Promise</code>
         * [.setDocumentEdited(edited)](#LHTML.saving.setDocumentEdited)
         * [.disableFormSaving()](#LHTML.saving.disableFormSaving)
+    * [.fs](#LHTML.fs) : <code>object</code>
     * [.on(event, handler)](#LHTML.on)
 
 <a name="LHTML.saving"></a>
 
 ### LHTML.saving : <code>object</code>
-Saving-related functions.  See also [LHTML.fs](LHTML.fs).
+Saving-related functions.  See also [fs](#LHTML.fs).
 
 **Kind**: static namespace of <code>[LHTML](#LHTML)</code>  
 
@@ -44,9 +45,11 @@ For usage, see [registerSaver](#LHTML.saving.registerSaver)'s usage.
 <a name="LHTML.saving.registerSaver"></a>
 
 #### saving.registerSaver(func)
-Registers a function to be called when the application is to be saved.  By default [defaultSaver](#LHTML.saving.defaultSaver) is used.
+Registers a function to be called when the application is to be saved.
+By default [defaultSaver](#LHTML.saving.defaultSaver) is used.
 
-The registered function is expected to return on object whose keys are filenames and whose values are file contents.
+The registered function is expected to return on object whose keys
+are filenames and whose values are file contents.
 
 **Kind**: static method of <code>[saving](#LHTML.saving)</code>  
 
@@ -72,6 +75,12 @@ Initiate a save of the current file.
 **Kind**: static method of <code>[saving](#LHTML.saving)</code>  
 **Returns**: <code>Promise</code> - A promise that will fire once the document has been
                        successfully saved.  
+**Example**  
+```js
+window.LHTML && LHTML.saving.save().then(function() {
+    console.log('saved');
+})
+```
 <a name="LHTML.saving.setDocumentEdited"></a>
 
 #### saving.setDocumentEdited(edited)
@@ -99,9 +108,7 @@ Also, every time a document is saved, the edited state is automatically reset to
 
 **Example**  
 ```js
-<script>
-  window.LHTML && LHTML.saving.setDocumentEdited(true);
-</script>
+window.LHTML && LHTML.saving.setDocumentEdited(true);
 ```
 <a name="LHTML.saving.disableFormSaving"></a>
 
@@ -127,6 +134,12 @@ auto-saving (because you're using a framework like React or Angular) call
     </select>
 </body>
 ```
+<a name="LHTML.fs"></a>
+
+### LHTML.fs : <code>object</code>
+File system functions.  See also [saving](#LHTML.saving).
+
+**Kind**: static namespace of <code>[LHTML](#LHTML)</code>  
 <a name="LHTML.on"></a>
 
 ### LHTML.on(event, handler)
