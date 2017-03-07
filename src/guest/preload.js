@@ -9,6 +9,11 @@ const {RPCService} = require('../rpc.js');
 const _ = require('lodash');
 const formsaving = require('./formsaving.js');
 
+/**
+ * LHTML namespace
+ *
+ * @namespace
+ */
 let LHTML = {};
 
 //----------------------------------------------------------------------------
@@ -60,7 +65,14 @@ RPC.handlers = {
 //  Some events:
 //    saved
 let EVENT_HANDLERS = {};
+
+/**
+ * @namespace
+ */
 LHTML.on = (event, handler) => {
+  /**
+   * something?
+   */
   if (!EVENT_HANDLERS[event]) {
     EVENT_HANDLERS[event] = [];
   }
@@ -70,6 +82,12 @@ LHTML.on = (event, handler) => {
 //---------------------------
 // Saving stuff
 //---------------------------
+
+/**
+ * LHTML.saving
+ *
+ * @property       {object}
+ */
 LHTML.saving = {};
 //
 //  The default SAVER will emit the current content of the html page.

@@ -123,6 +123,11 @@ class ChrootFS {
       })
     })
   }
+  /**
+   * List files/directories in the document.
+   *
+   * @return     {<type>}  { description_of_the_return_value }
+   */
   listdir() {
     return this._getRoot()
     .then(root => {
