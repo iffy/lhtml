@@ -70,7 +70,7 @@ LHTML viewers provide a small JavaScript API to `index.html` files within the `L
 
 | Function/Variable | Short description |
 |---|---|
-| [`fs.listdir()`](#fslistdir) | List contents of the zip |
+| [`fs.listdir(...)`](#fslistdir) | List contents of the zip |
 | [`fs.readFile(...)`](#fsreadfile) | Read a file from the document zip |
 | [`fs.remove(...)`](#fsremove) | Remove a file/dir from the document zip |
 | [`fs.writeFile(...)`](#fswritefile) | Overwrite a file within the document zip |
@@ -82,9 +82,19 @@ LHTML viewers provide a small JavaScript API to `index.html` files within the `L
 | [`saving.setDocumentEdited(...)`](#savingsetdocumentedited) | Indicate that there are changes to be saved |
 | [`suggestSize(...)`](#suggestsize) | Attempt to resize the document's window |
 
-### `fs.listdir()`
+### `fs.listdir(...)`
 
-List the full contents of the LHTML zip file.  Returns a list of objects with the following members:
+List the full contents of the LHTML zip file.  
+
+Spec: `fs.listdir([path,] [options])`
+
+| Parameter | Description |
+|---|---|
+| `path` | Path (relative to document zip root) to list.  Defaults to `/` |
+| `options` | Object of options |
+| `options.recursive` | If `true` (the default) then recursively list the directory tree. |
+
+Returns a list of objects with the following members:
 
 | Key | Description |
 |---|---|
@@ -120,6 +130,8 @@ window.LHTML && LHTML.fs.readFile('something.txt').then(function(contents) {
 ```
 
 ### `fs.remove(...)`
+
+Spec: `fs.remove(path)`
 
 Delete a file/directory from the zipfile.  **You must call `saving.save()` afterward if you want the deletion to be permanent.**
 

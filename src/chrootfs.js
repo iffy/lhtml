@@ -118,43 +118,68 @@ class ChrootFS {
       return fs.readFileAsync(abspath, ...args);
     })
   }
-  listdir() {
-    return this._getRoot()
-    .then(root => {
-      return new Promise((resolve, reject) => {
-        let items = [];
-        klaw(root)
-          .on('readable', function() {
-            let item;
-            while (item = this.read()) {
-              let path = Path.relative(root, item.path);
-              if (path === '') {
-                // root
-                continue
+  listdir(path, options) {
+    if (_.isObject(path)) {
+      options = path;
+      path = undefined;
+    }
+    path = path || '/';
+    options = options || {};
+    let recursive = _.isNil(options.recursive) ? true : options.recursive;
+    function listdirItem(root, path, stats) {
+      let relpath = Path.relative(root, path);
+      let dirname = Path.dirname(relpath);
+      if (dirname === '.') {
+        dirname = '';
+      }
+      let ret = {
+        name: Path.basename(relpath),
+        path: relpath,
+        dir: dirname,
+        size: stats.size,
+      }
+      if (stats.isDirectory()) {
+        ret.isdir = true;
+      }
+      return ret;
+    }
+    return this._getPath(path)
+    .then(abspath => {
+      if (recursive) {
+        return new Promise((resolve, reject) => {
+          let items = [];
+          klaw(abspath)
+            .on('readable', function() {
+              let item;
+              while (item = this.read()) {
+                let path = Path.relative(abspath, item.path);
+                if (path === '') {
+                  // root
+                  continue
+                }
+                items.push(listdirItem(abspath, item.path, item.stats));
               }
-              let dirname = Path.dirname(path);
-              if (dirname === '.') {
-                dirname = '';
-              }
-              let res = {
-                name: Path.basename(path),
-                path: path,
-                dir: dirname,
-                size: item.stats.size,
-              }
-              if (item.stats.isDirectory()) {
-                res.isdir = true;
-              }
-              items.push(res);
-            }
+            })
+            .on('error', (err, item) => {
+              console.error('error', err, item);
+            })
+            .on('end', () => {
+              resolve(items);
+            })
+        });
+      } else {
+        // not recursive
+        return fs.readdirAsync(abspath)
+        .then(contents => {
+          return _.map(contents, basename => {
+            let path = Path.join(abspath, basename)
+            let ret = listdirItem(abspath,
+              path,
+              fs.lstatSync(path));
+            return ret;
           })
-          .on('error', (err, item) => {
-            console.error('error', err, item);
-          })
-          .on('end', () => {
-            resolve(items);
-          })
-      });
+        })
+      }
     })
   }
   remove(path) {
