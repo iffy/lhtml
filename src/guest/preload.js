@@ -10,7 +10,7 @@ const _ = require('lodash');
 const formsaving = require('./formsaving.js');
 
 /**
- * LHTML namespace
+ * LHTML namespace.
  *
  * @namespace
  */
@@ -66,13 +66,30 @@ RPC.handlers = {
 //    saved
 let EVENT_HANDLERS = {};
 
+
 /**
- * @namespace
- */
+ * Listen for LHTML events.
+ * 
+ * Possible events are:
+ * 
+ * | Event | Description |
+ * |---|---|
+ * | `saved` | Emitted after the document has been saved.  Handler is called with no arguments. |
+ * | `save-failed` | Emitted if an attempted save fails.  The handler is called with a string description. |
+ *
+ * @example
+ * window.LHTML && LHTML.on('saved', function() {
+ *     console.log('The file was saved!');
+ * })
+ * window.LHTML && LHTML.on('save-failed', function() {
+ *     console.log('Save failed :(');
+ * })
+ *
+ * @param      {string}    event    Event name.  Will be one of: <tt>saved</tt>,
+ *                                  <tt>save-failed</tt>
+ * @param      {function}  handler  Function that will be called with the event.
+ */   
 LHTML.on = (event, handler) => {
-  /**
-   * something?
-   */
   if (!EVENT_HANDLERS[event]) {
     EVENT_HANDLERS[event] = [];
   }
@@ -86,12 +103,21 @@ LHTML.on = (event, handler) => {
 /**
  * LHTML.saving
  *
- * @property       {object}
+ * @namespace
  */
 LHTML.saving = {};
-//
-//  The default SAVER will emit the current content of the html page.
-//
+
+/**
+ * This is the saving function used by default (if none is provided by calling
+ * {@link LHTML.saving.registerSaver}). It will take the current state of
+ * `index.html` and overwrite `index.html` within the LHTML zip.
+ *
+ *
+ * For usage, see {@link LHTML.saving.registerSaver}'s usage.
+ *
+ * @return     {Object}  an object conforming to what {@link
+ *                       LHTML.saving.registerSaver} expects.
+ */
 LHTML.saving.defaultSaver = () => {
   // Thanks http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript/10162353#10162353
   let doctype = '';
@@ -109,17 +135,33 @@ LHTML.saving.defaultSaver = () => {
   };
 }
 let SAVER = LHTML.saving.defaultSaver;
-//
-//  Register the function to be called when the user requests to Save.
-//  The function should return an object with filenames as keys and contents
-//  as the value for any files that should be completely overwritten.
-//
+
+/**
+ * Registers a function to be called when the application is to be saved.  By default {@link LHTML.saving.defaultSaver} is used.
+ * 
+ * The registered function is expected to return on object whose keys are filenames and whose values are file contents.
+ * 
+ * @example
+ * // Register a saver that will save index.html in its current state
+ * // and write some data to somedata.json within the LHTML zip.
+ * window.LHTML && LHTML.saving.registerSaver(function() {
+ *  var files = LHTML.saving.defaultSaver();
+ *  files['somedata.json'] = '{"foo": "bar"}';
+ *  return files;
+ * })
+ *
+ * @param      {function}  func    The function that will be called on save.
+ */
 LHTML.saving.registerSaver = (func) => {
   SAVER = func;
 }
-//
-//  Save the current file.
-//
+
+/**
+ * Initiate a save of the current file.
+ *
+ * @return     {Promise}  A promise that will fire once the document has been
+ *                        successfully saved.
+ */
 LHTML.saving.save = () => {
   return RPC.call('save');
 }
@@ -166,6 +208,27 @@ LHTML.on('save-failed', () => {
 // form-saving default
 //
 let form_saving_enabled = true;
+
+/**
+ * Disables form saving.
+ *
+ * A common use case for LHTML files is to present an HTML form.  Therefore, by
+ * default data entered into forms will be saved.  If you want to disable this
+ * auto-saving (because you're using a framework like React or Angular) call
+ * {@link LHTML.saving.disableFormSaving()}.
+ *
+ * @example
+ * <body>
+ *     <!-- disable form saving -->
+ *     <script>window.LHTML && LHTML.saving.disableFormSaving();</script>
+ *     Name: <input name="name">
+ *     Email: <input type="email" name="email">
+ *     Favorite color: <select>
+ *         <option>Red</option>
+ *         <option>Blue</option>
+ *     </select>
+ * </body>
+ */
 LHTML.saving.disableFormSaving = () => {
   form_saving_enabled = false;
   formsaving.disable();
