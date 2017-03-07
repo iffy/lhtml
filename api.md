@@ -18,7 +18,7 @@ These are the functions available to authors of LHTML documents available in the
 
 ### `fs.listdir(...)`
 
-List the full contents of the LHTML zip file.  
+List the contents of the LHTML zip file.  If called without arguments, you will receive a list of every file within the LHTML zip file.
 
 Spec: `fs.listdir([path,] [options])`
 
