@@ -67,7 +67,9 @@ window.LHTML && LHTML.fs.readFile('something.txt').then(function(contents) {
 
 Spec: `fs.remove(path)`
 
-Delete a file/directory from the zipfile.  **You must call `saving.save()` afterward if you want the deletion to be permanent.**
+Delete a file/directory from the zipfile.
+
+**You must call `saving.save()` afterward if you want the deletion to be permanent.**
 
 Usage:
 
