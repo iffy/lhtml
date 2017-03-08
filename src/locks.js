@@ -1,7 +1,7 @@
 const Promise = require('bluebird');
 
 
-class IOSemaphore {
+class GroupSemaphore {
   //
   // groups is an object whose keys are group names
   // and whose values are one of:
@@ -30,6 +30,19 @@ class IOSemaphore {
       this.flag_holder = null;
       this.pump();
     }
+  }
+  run(group, func) {
+    return this.acquire(group)
+    .then(() => {
+      return func();
+    })
+    .then(result => {
+      this.release(group);
+      return result;
+    }, err => {
+      this.release(group);
+      throw err;
+    })
   }
   pump() {
     if (!this.queue.length) {
@@ -60,4 +73,24 @@ class IOSemaphore {
   }
 }
 
-module.exports = {IOSemaphore};
+
+class RPCLock {
+  constructor(rpc) {
+    this.rpc = rpc;
+  }
+  run(func) {
+    return this.rpc.call('acquire_io_lock')
+    .then(() => {
+      return func();
+    })
+    .then(result => {
+      this.rpc.call('release_io_lock');
+      return result;
+    }, err => {
+      this.rpc.call('release_io_lock');
+      throw err;
+    })
+  }
+}
+
+module.exports = {GroupSemaphore, RPCLock};

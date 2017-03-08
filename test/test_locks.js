@@ -1,7 +1,7 @@
 const Promise = require('bluebird');
 const assert = require('assert');
 const _ = require('lodash');
-const {IOSemaphore} = require('../src/locks.js');
+const {GroupSemaphore} = require('../src/locks.js');
 
 class Deferred {
   constructor() {
@@ -25,11 +25,11 @@ class Deferred {
   }
 }
 
-describe('IOSemaphore', function() {
+describe('GroupSemaphore', function() {
   describe('basically', function() {
     let sem;
     it('saves should be sequential', () => {
-      sem = new IOSemaphore({save: 'single', io: 'multiple'});
+      sem = new GroupSemaphore({save: 'single', io: 'multiple'});
       let called = [];
       let r1 = sem.acquire('save');
       assert.ok(r1.isResolved(), "Should have acquired immediately");
@@ -42,7 +42,7 @@ describe('IOSemaphore', function() {
     })
 
     it('save + io should be sequential', () => {
-      sem = new IOSemaphore({save: 'single', io: 'multiple'});
+      sem = new GroupSemaphore({save: 'single', io: 'multiple'});
       let called = [];
       let r1 = sem.acquire('save');
       assert.ok(r1.isResolved(), "Should have acquired immediately");
@@ -55,7 +55,7 @@ describe('IOSemaphore', function() {
     })
 
     it('io + save should be sequential', () => {
-      sem = new IOSemaphore({save: 'single', io: 'multiple'});
+      sem = new GroupSemaphore({save: 'single', io: 'multiple'});
       let called = [];
       let r1 = sem.acquire('io');
       assert.ok(r1.isResolved(), "Should have acquired immediately");
@@ -68,7 +68,7 @@ describe('IOSemaphore', function() {
     })
 
     it('io + io should be parallel', () => {
-      sem = new IOSemaphore({save: 'single', io: 'multiple'});
+      sem = new GroupSemaphore({save: 'single', io: 'multiple'});
       let called = [];
       let r1 = sem.acquire('io');
       assert.ok(r1.isResolved(), "Should have acquired immediately");
@@ -78,7 +78,7 @@ describe('IOSemaphore', function() {
     })
 
     it('io + io + save + io should be parallel then sequential', () => {
-      sem = new IOSemaphore({save: 'single', io: 'multiple'});
+      sem = new GroupSemaphore({save: 'single', io: 'multiple'});
       let called = [];
       let r1 = sem.acquire('io');
       assert.ok(r1.isResolved(), "Should have acquired immediately");

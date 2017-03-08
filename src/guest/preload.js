@@ -9,6 +9,7 @@ const {RPCService} = require('../rpc.js');
 const _ = require('lodash');
 const formsync = require('./formsync.js');
 const {ChrootFS} = require('../chrootfs.js');
+const {RPCLock} = require('../locks.js');
 
 let LHTML = {};
 
@@ -54,6 +55,7 @@ RPC.handlers = {
     });
   }
 }
+let rpc_lock = new RPCLock(RPC);
 
 //----------------------------------------------------------------------------
 // Public API
@@ -98,7 +100,7 @@ _.each(fs_attrs, attr => {
 window.addEventListener('load', () => {
   RPC.call('get_chrootfs_root')
   .then(chrootfs_root => {
-    chfs = new ChrootFS(chrootfs_root);
+    chfs = new ChrootFS(chrootfs_root, null, rpc_lock);
     _.each(fs_attrs, attr => {
       LHTML.fs[attr] = (...args) => {
         return chfs[attr](...args);

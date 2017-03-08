@@ -14,7 +14,7 @@ const AdmZip = require('adm-zip');
 const log = require('electron-log');
 const {safe_join, ChrootFS} = require('./chrootfs.js');
 const {autoUpdater} = require("electron-updater");
-const {IOSemaphore} = require('./locks.js');
+const {GroupSemaphore} = require('./locks.js');
 
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
@@ -401,9 +401,9 @@ class Document {
   constructor(path) {
     this._chroot = null;
     this.window_id = null;
-    this.lock = new IOSemaphore({
-      'save': 'single',
-      'io': 'multiple',
+    this.lock = new GroupSemaphore({
+      save: 'single',
+      io: 'multiple',
     });
     
     // random 
@@ -512,8 +512,13 @@ class Document {
         if (!dst) {
           return;
         }
-        this.changeSavePath(dst)
-        return resolve(this.save());
+        return this.changeSavePath(dst)
+        .then(() => {
+          return this.save();
+        })
+        .then(result => {
+          resolve(result);
+        })
       });
     })
   }
@@ -904,6 +909,14 @@ RPC.listen();
 RPC.handlers = {
   echo: (ctx, data) => {
     return 'echo: ' + data;
+  },
+  acquire_io_lock: (ctx) => {
+    let doc = OPENDOCUMENTS[ctx.sender_id];
+    return doc.lock.acquire('io');
+  },
+  release_io_lock: (ctx) => {
+    let doc = OPENDOCUMENTS[ctx.sender_id];
+    return doc.lock.release('io');
   },
   save: (ctx, data) => {
     let window_id = OPENDOCUMENTS[ctx.sender_id].window_id;
