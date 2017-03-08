@@ -97,43 +97,5 @@ describe('IOSemaphore', function() {
       assert.ok(r3.isResolved(), 'waiting save should be acquired');
       assert.ok(r4.isPending(), "next io should still wait")
     })
-
-    // it('save + io should be sequential', () => {
-    //   sem = new IOSemaphore({'save': 'single', 'io': 'multiple'});
-    //   let called = [];
-    //   let p1 = new Deferred();
-    //   let r1 = sem.run('save', () => {
-    //     called.push('run1');
-    //     return p1.promise;
-    //   });
-    //   assert.ok(_.includes(called, 'run1'), "should immediately run first");
-
-    //   sem.run('io', () => {
-    //     called.push('run2');
-    //   })
-    //   assert.ok(!_.includes(called, 'run2'), "Should not have run second save yet");
-    //   p1.resolve('run1 done')
-    //   return r1.then(() => {
-    //     assert.ok(_.includes(called, 'run2'), "Should run2 after run1 is done");  
-    //   })
-    // })
-
-    // it('io + io should run in a parallel', () => {
-    //   sem = new IOSemaphore({'save': 'single', 'io': 'multiple'});
-    //   let called = [];
-    //   let p1 = new Deferred();
-    //   let r1 = sem.run('io', () => {
-    //     called.push('run1');
-    //     return p1.promise;
-    //   });
-    //   assert.ok(_.includes(called, 'run1'), "should immediately run first");
-
-    //   let p2 = new Deferred();
-    //   let r2 = sem.run('io', () => {
-    //     called.push('run2');
-    //     return p2.promise;
-    //   })
-    //   assert.ok(_.includes(called, 'run2'), "Should not have run second save yet");
-    // })
   });
 });
