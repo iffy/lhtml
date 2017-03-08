@@ -1,3 +1,6 @@
+const Promise = require('bluebird');
+
+
 class IOSemaphore {
   //
   // groups is an object whose keys are group names
@@ -11,11 +14,22 @@ class IOSemaphore {
     this.groups = groups
     this.queue = [];
   }
-  run(group, func) {
+  acquire(group) {
     return new Promise((resolve, reject) => {
-      this.queue.push({group, func, resolve, reject});
+      this.queue.push({group, resolve, reject});
       this.pump();
     })
+  }
+  release(group) {
+    if (!this.flag_holder || this.flag_holder !== group) {
+      throw new Error("Trying to release a job that wasn't acquired.")
+    }
+    this.flags_held -= 1;
+    if (this.flags_held === 0) {
+      // done with all jobs of this type
+      this.flag_holder = null;
+      this.pump();
+    }
   }
   pump() {
     if (!this.queue.length) {
@@ -23,7 +37,7 @@ class IOSemaphore {
     }
     if (!this.flag_holder) {
       // nothing is running
-      this._runNext();
+      this._serviceNext();
       this.pump();
     } else {
       // something is running
@@ -32,34 +46,17 @@ class IOSemaphore {
         // the currently running thing allows parallel running
         if (this.flag_holder === this.queue[0].group) {
           // next thing is in matching group
-          this._runNext();
+          this._serviceNext();
           this.pump();
         }
       }
     }
   }
-  _runNext() {
-    let job = this.queue.shift();
-    this.flag_holder = job.group;
+  _serviceNext() {
+    let acquiree = this.queue.shift();
+    this.flag_holder = acquiree.group;
     this.flags_held += 1;
-    let p = new Promise((resolve, reject) => {
-      resolve(job.func());
-    })
-    p.then(result => {
-      job.resolve(result);
-      this._finishJob();
-    }, err => {
-      job.reject(err);
-      this._finishJob();
-    })
-  }
-  _finishJob() {
-    this.flags_held -= 1;
-    if (this.flags_held === 0) {
-      // done with all jobs of this type
-      this.flag_holder = null;
-      this.pump();
-    }
+    acquiree.resolve(true);
   }
 }
 
