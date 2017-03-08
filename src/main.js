@@ -14,6 +14,7 @@ const AdmZip = require('adm-zip');
 const log = require('electron-log');
 const {safe_join, ChrootFS} = require('./chrootfs.js');
 const {autoUpdater} = require("electron-updater");
+const {IOSemaphore} = require('./locks.js');
 
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
@@ -400,6 +401,10 @@ class Document {
   constructor(path) {
     this._chroot = null;
     this.window_id = null;
+    this.lock = new IOSemaphore({
+      'save': 'single',
+      'io': 'multiple',
+    });
     
     // random 
     this.id = randomIdentifier();
@@ -477,17 +482,19 @@ class Document {
     }
     let guest = this._rpcGuest();
     return this._updateWorkingDirFromSaveData()
-    .then(result => {
-      if (this.is_directory) {
-        // done, it's already saved
-      } else {
-        // Write a new zip file
-        let zip = new AdmZip();
-        zip.addLocalFolder(this.working_dir, '.');
-        zip.writeZip(this.save_path);
-      }
-      log.info('saved', this.save_path);
-      RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
+    .then(() => {
+      return this.lock.run('save', () => {
+        if (this.is_directory) {
+          // done, it's already saved
+        } else {
+          // Write a new zip file
+          let zip = new AdmZip();
+          zip.addLocalFolder(this.working_dir, '.');
+          zip.writeZip(this.save_path);
+        }
+        log.info('saved', this.save_path);
+        RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
+      })
     }, err => {
       RPC.call('emit_event', {'key': 'save-failed', 'data': null}, guest);
     })
@@ -511,35 +518,37 @@ class Document {
     })
   }
   changeSavePath(new_path) {
-    log.debug('changeSavePath', this.save_path, '-->', new_path);
-    if (new_path !== this.save_path) {
-      let new_is_directory = fs.existsSync(new_path) && fs.lstatSync(new_path).isDirectory()
-      if (this.is_directory) {
-        if (new_is_directory) {
-          log.debug('dir -> dir');
+    return this.lock.run('save', () => {
+      log.debug('changeSavePath', this.save_path, '-->', new_path);
+      if (new_path !== this.save_path) {
+        let new_is_directory = fs.existsSync(new_path) && fs.lstatSync(new_path).isDirectory()
+        if (this.is_directory) {
+          if (new_is_directory) {
+            log.debug('dir -> dir');
 
-          this._working_dir = null;
-          this._chroot = null;
-        } else {
-          log.debug('dir -> file');
+            this._working_dir = null;
+            this._chroot = null;
+          } else {
+            log.debug('dir -> file');
 
-          this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
-          this._working_dir = this._tmpdir.name;
-          this._chroot = null;
-          fs.copySync(this.save_path, this._working_dir) 
-        }
-        this.emitWorkingDir();
-      } else {
-        if (new_is_directory) {
-          log.debug('file -> dir');
+            this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
+            this._working_dir = this._tmpdir.name;
+            this._chroot = null;
+            fs.copySync(this.save_path, this._working_dir) 
+          }
+          this.emitWorkingDir();
         } else {
-          log.debug('file -> file');
+          if (new_is_directory) {
+            log.debug('file -> dir');
+          } else {
+            log.debug('file -> file');
+          }
         }
+        this.is_directory = new_is_directory;
+        this.save_path = new_path;
+        this.window && this.window.setDocumentEdited(true);
       }
-      this.is_directory = new_is_directory;
-      this.save_path = new_path;
-      this.window && this.window.setDocumentEdited(true);
-    }
+    })
   }
   attachToWindow(window_id) {
     if (this.window_id) {
