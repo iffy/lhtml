@@ -93,6 +93,7 @@ describe('IOSemaphore', function() {
       assert.ok(r4.isPending(), "Should wait");
 
       sem.release('io')
+      sem.release('io')
       assert.ok(r3.isResolved(), 'waiting save should be acquired');
       assert.ok(r4.isPending(), "next io should still wait")
     })
