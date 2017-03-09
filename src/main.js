@@ -2,6 +2,7 @@
 // See LICENSE for details.
 
 const {ipcMain, dialog, app, BrowserWindow, Menu, protocol, webContents, net} = require('electron');
+const electron_is = require('electron-is');
 const {session} = require('electron');
 var electron = require('electron');
 const Path = require('path');
@@ -17,7 +18,8 @@ const {autoUpdater} = require("electron-updater");
 const {GroupSemaphore} = require('./locks.js');
 
 autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = 'info';
+log.transports.console.level = log.transports.file.level = process.env.LOGLEVEL || 'debug';
+log.transports.file.maxSize = (5 * 1024 * 1024);
 
 log.info('LHTML starting...');
 
@@ -596,7 +598,6 @@ function getDocOnlyMenuItems(templ) {
   .value();
 }
 let doc_only_menu_items = getDocOnlyMenuItems(template);
-console.log('doc_only_menu_items', doc_only_menu_items);
 function enableDocMenuItems(enabled, themenu) {
   themenu = themenu || menu;
   _.each(themenu.items, (item) => {
@@ -613,6 +614,8 @@ app.on('ready', function() {
   // Updates
   if (process.env.CHECK_FOR_UPDATES === "no" || process.env.RUN_TESTS) {
     log.info('UPDATE CHECKING DISABLED');
+  } else if (electron_is.dev()) {
+    log.info('UPDATE CHECKING DISABLED in dev');
   } else {
     updater.checkForUpdates();
   }
@@ -648,7 +651,7 @@ app.on('ready', function() {
       // XXX Is this a security problem?
       callback({})
     } else {
-      log.debug(`Document attempted ${details.method} ${details.url}`);
+      log.warn(`Document attempted ${details.method} ${details.url}`);
       callback({cancel: true});  
     }
   })

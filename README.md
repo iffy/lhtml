@@ -98,6 +98,10 @@ To run the application in development mode do:
     yarn install
     node_modules/.bin/electron .
 
+You can set the process and browser logging levels with the `LOGLEVEL` and `JS_LOGLEVEL` environment variables.
+
+    LOGLEVEL=warn JS_LOGLEVEL=debug electron .
+
 # Packaging
 
 To do cross-platform builds, see [this guide](https://github.com/electron-userland/electron-builder/wiki/Multi-Platform-Build)

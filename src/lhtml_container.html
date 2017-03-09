@@ -24,7 +24,6 @@ onload = () => {
   
   // Handle main -> guest communication
   ipcRenderer.on('rpc', (event, message) => {
-    console.log('rpc passthru', message);
     webview.send('rpc', message);
   })
 
@@ -33,28 +32,17 @@ onload = () => {
     webview.getWebContents().toggleDevTools();
   })
 
-  const loadstart = () => {
-    console.log('load start');
-
-  }
-  const loadstop = () => {
-    console.log('load stop');
-  }
-  webview.addEventListener('did-start-loading', loadstart);
-  webview.addEventListener('did-stop-loading', loadstop);
   webview.addEventListener('page-title-updated', (title, explicitSet) => {
     document.title = webview.getTitle();
   })
 
   // Open...
   ipcRenderer.on('load-file', (event, url) => {
-    console.log('load file', url);
     webview.src = url;
   })
 
   // Reload...
   ipcRenderer.on('reload-file', (event) => {
-    console.log('reload-file');
     webview.reload();
   });
 

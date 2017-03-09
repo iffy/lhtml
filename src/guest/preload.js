@@ -10,6 +10,9 @@ const _ = require('lodash');
 const formsync = require('./formsync.js');
 const {ChrootFS} = require('../chrootfs.js');
 const {RPCLock} = require('../locks.js');
+const log = require('electron-log');
+
+log.transports.console.level = process.env.JS_LOGLEVEL || 'warn';
 
 let LHTML = {};
 
@@ -214,4 +217,4 @@ LHTML.suggestSize = (width, height) => {
 }
 
 window.LHTML = LHTML;
-console.log('LHTML: finished loading');
+console.log('[LHTML] loaded');

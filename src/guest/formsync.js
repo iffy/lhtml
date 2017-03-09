@@ -2,6 +2,7 @@
 // See LICENSE for details.
 
 const _ = require('lodash');
+const log = require('electron-log');
 
 module.exports = {};
 
@@ -125,7 +126,7 @@ let onChange = (func) => {
 
 let enable = () => {
   if (observer) {
-    console.log('LHTML: form saving already enabled');
+    log.warn('LHTML: form saving already enabled');
     return;
   }
   observer = new MutationObserver(mutations => {
@@ -148,12 +149,12 @@ let enable = () => {
     childList: true,
     subtree: true,
   });
-  console.log('LHTML: form saving enabled');
+  log.info('LHTML: form saving enabled');
 }
 
 let disable = () => {
   if (!observer) {
-    console.log('LHTML: form saving already disabled');
+    // already disabled
     return;
   }
   observer.disconnect();
