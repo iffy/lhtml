@@ -755,7 +755,11 @@ function openPath(path) {
 }
 
 function reloadFocusedDoc() {
-  BrowserWindow.getFocusedWindow().webContents.send('reload-file');
+  let current = currentWindow();
+  if (current) {
+    current.webContents.send('reload-file');
+    current.setDocumentEdited(false);
+  }
 }
 
 function saveFocusedDoc() {
