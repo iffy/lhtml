@@ -48,13 +48,29 @@ function getDirSize(path) {
   })
 }
 
+class FakeLock {
+  run(func) {
+    return new Promise((resolve, reject) => {
+      try {
+        return resolve(func())
+      } catch(err) {
+        reject(err);
+      }
+    })
+  }
+}
+
 
 class ChrootFS {
-  constructor(path, options) {
+  //
+  // lock - if given, a class with a `run(func)` method that requests
+  //        a file access lock for reading/writing
+  constructor(path, options, lock) {
     options = options || {};
     this._root = null;
     this._tmp_root = Path.resolve(path);
     this.maxBytes = options.maxBytes || (10 * 2 ** 20);
+    this.lock = lock || (new FakeLock());
   }
   setRoot(path) {
     this._root = null;
@@ -102,20 +118,24 @@ class ChrootFS {
         })
     })
     .then(abspath => {
-      return new Promise((resolve, reject) => {
-        fs.ensureDir(Path.dirname(abspath), (err) => {
-          resolve(err)
+      return this.lock.run(() => {
+        return new Promise((resolve, reject) => {
+          fs.ensureDir(Path.dirname(abspath), (err) => {
+            resolve(err)
+          })
         })
+        .then(() => {
+          return fs.writeFileAsync(abspath, data, ...args);
+        });  
       })
-      .then(() => {
-        return fs.writeFileAsync(abspath, data, ...args);
-      });
     });
   }
   readFile(path, ...args) {
     return this._getPath(path)
     .then(abspath => {
-      return fs.readFileAsync(abspath, ...args);
+      return this.lock.run(() => {
+        return fs.readFileAsync(abspath, ...args);
+      })
     })
   }
   listdir(path, options) {
@@ -185,15 +205,17 @@ class ChrootFS {
   remove(path) {
     return this._getPath(path)
     .then(abspath => {
-      return new Promise((resolve, reject) => {
-        fs.remove(abspath, (err) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(null);
-          }
+      return this.lock.run(() => {
+        return new Promise((resolve, reject) => {
+          fs.remove(abspath, (err) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(null);
+            }
+          });
         });
-      });
+      })
     })
   }
 }
