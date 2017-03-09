@@ -1,4 +1,5 @@
 const Promise = require('bluebird');
+const _ = require('lodash');
 
 
 class GroupSemaphore {
@@ -77,19 +78,61 @@ class GroupSemaphore {
 class RPCLock {
   constructor(rpc) {
     this.rpc = rpc;
+    this.locks_held = 0;
+    this.pending_acquire = false;
+    this.pending_queue = [];
   }
   run(func) {
-    return this.rpc.call('acquire_io_lock')
+    return this.acquire()
     .then(() => {
       return func();
     })
     .then(result => {
-      this.rpc.call('release_io_lock');
-      return result;
+      return this.release().then(() => {
+        return result;
+      })
     }, err => {
-      this.rpc.call('release_io_lock');
-      throw err;
+      return this.release().then(() => {
+        throw err;
+      });
     })
+  }
+  acquire() {
+    if (this.locks_held > 0) {
+      // already have a lock
+      this.locks_held += 1
+      return Promise.resolve(true);
+    } else {
+      // no lock yet
+      if (!this.pending_acquire) {
+        this.pending_acquire = true;
+        this.rpc.call('acquire_io_lock')
+          .then(() => {
+            this._flush_pending();
+          })
+      }
+      return new Promise((resolve, reject) => {
+        this.pending_queue.push({resolve, reject});
+      });
+    }
+  }
+  _flush_pending() {
+    this.pending_acquire = false;
+    _.each(this.pending_queue, p => {
+      this.locks_held += 1;
+      p.resolve(true)
+    });
+    this.pending_queue = [];
+  }
+  release() {
+    this.locks_held -= 1;
+    if (this.locks_held < 0) {
+      throw new Error('Attempting to release too much');
+    } else if (this.locks_held == 0) {
+      return this.rpc.call('release_io_lock');
+    } else {
+      return Promise.resolve(true);
+    }
   }
 }
 
