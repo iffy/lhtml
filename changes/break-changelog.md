@@ -1,1 +1,0 @@
-Changes for the CHANGELOG are no longer sourced from git commit messages.
