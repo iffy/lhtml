@@ -16,6 +16,7 @@ const log = require('electron-log');
 const {safe_join, ChrootFS} = require('./chrootfs.js');
 const {autoUpdater} = require("electron-updater");
 const {GroupSemaphore} = require('./locks.js');
+const {showPreferenceWindow, getPrefValue} = require('./prefs/prefs.js');
 
 autoUpdater.logger = log;
 log.transports.console.level = log.transports.file.level = process.env.LOGLEVEL || 'debug';
@@ -153,8 +154,8 @@ let template = [{
 }]
 
 if (process.platform === 'darwin') {
-  // OS X
-  const name = 'LHTML'; //app.getName();
+  // macOS
+  const name = 'LHTML';
   template.unshift({
     label: name,
     submenu: [
@@ -169,6 +170,14 @@ if (process.platform === 'darwin') {
         click() {
           promptForUpdate();
         },
+      },
+      {type: 'separator'},
+      {
+        label: 'Preferences...',
+        accelerator: 'CmdOrCtrl+,',
+        click() {
+          showPreferenceWindow();
+        }
       },
       {type: 'separator'},
       {
@@ -200,6 +209,16 @@ if (process.platform === 'darwin') {
         click() { app.quit(); }
       },
     ]
+  })
+} else {
+  // Not macOS
+  template[1].submenu.push({type: 'separator'})
+  template[1].submenu.push({
+    label: 'Preferences...',
+    accelerator: 'CmdOrCtrl+,',
+    click() {
+      showPreferenceWindow();
+    }
   })
 }
 
@@ -436,7 +455,11 @@ class Document {
   }
   get chroot() {
     if (!this._chroot) {
-      this._chroot = new ChrootFS(this.working_dir);
+      let maxBytes = (parseInt(getPrefValue('max_doc_size')) * 2 ** 20);
+      maxBytes = maxBytes < (5 * 2 ** 20) ? (5 * 2 ** 20) : maxBytes;
+      this._chroot = new ChrootFS(this.working_dir, {
+        maxBytes: maxBytes,
+      });
     }
     return this._chroot;
   }

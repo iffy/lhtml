@@ -1,0 +1,1 @@
+Users can allow documents to take more space.
