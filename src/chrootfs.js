@@ -109,6 +109,7 @@ class ChrootFS {
     });
   }
   writeFile(path, data, ...args) {
+    console.log('writeFile called', path, data, args);
     return this._getPath(path)
     .then(abspath => {
       // XXX check that the amount of data being written is okay.

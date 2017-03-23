@@ -37,6 +37,7 @@ RPC.handlers = {
     if (LHTML.saving.onBeforeSave) {
       p = Promise.resolve(LHTML.saving.onBeforeSave());
     } else {
+      console.log('no onBeforeSave');
       p = Promise.resolve({})
     }
     return p.then(() => {
@@ -167,6 +168,7 @@ LHTML.saving = {};
 // Perform any writing that needs to happen before saving.
 //
 LHTML.saving.onBeforeSave = () => {
+  console.log('onBeforeSave');
   // Thanks http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript/10162353#10162353
   let doctype = '';
   let node = document.doctype;

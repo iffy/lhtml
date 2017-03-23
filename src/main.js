@@ -18,6 +18,8 @@ const {autoUpdater} = require("electron-updater");
 const {GroupSemaphore} = require('./locks.js');
 const {showPreferenceWindow, getPrefValue} = require('./prefs/prefs.js');
 
+const OPEN_DEVTOOLS = process.env.OPEN_DEVTOOLS ? true : false;
+
 autoUpdater.logger = log;
 log.transports.console.level = log.transports.file.level = process.env.LOGLEVEL || 'debug';
 log.transports.file.maxSize = (5 * 1024 * 1024);
@@ -352,6 +354,9 @@ function createLHTMLWindow() {
     show: false,
   });
   win.on('ready-to-show', () => {
+    if (OPEN_DEVTOOLS) {
+      win.webContents.openDevTools('right');
+    }
     win.show();
   })
   win.on('resize', () => {
@@ -380,6 +385,7 @@ function createLHTMLWindow() {
       if (choice === 1) {
         ev.preventDefault();
         win.close_promise && win.close_promise(false);
+        win.webContents.closeDevTools();
       }
     }
   })
@@ -497,6 +503,8 @@ class Document {
     return this._updateWorkingDirFromSaveData()
     .then(() => {
       return this.lock.run('save', () => {
+        console.log('this.working_dir', this.working_dir);
+        console.log('this.save_path', this.save_path);
         if (this.is_directory) {
           // done, it's already saved
         } else {
@@ -509,6 +517,7 @@ class Document {
         RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
       })
     }, err => {
+      log.error(err);
       RPC.call('emit_event', {'key': 'save-failed', 'data': null}, guest);
     })
   }

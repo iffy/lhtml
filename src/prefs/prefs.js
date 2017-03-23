@@ -1,6 +1,7 @@
 let {BrowserWindow, app, remote} = require('electron');
 const fs = require('fs-extra');
 const Path = require('path');
+const _ = require('lodash');
 
 if (remote) {
   // running in a renderer process
