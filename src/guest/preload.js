@@ -115,7 +115,7 @@ function increaseSizePrompt(requestedSize, currentMaxBytes) {
   let requested_MB = Math.ceil(requestedSize / MEG);
   let reasonable_MB = ceilToNearest(requested_MB * 1.1, 5);
   let message = `Do you want to allow this document to take ${reasonable_MB}MB of space?`
-  let detail = `The document is requesting ${requested_MB}MB which exceeds the limit set in Preferences (${currentmax_MB}MB).`;
+  let detail = `The document is requesting ${requested_MB}MB which exceeds the current limit of ${currentmax_MB}MB (set in Preferences).`;
   return new Promise((resolve, reject) => {
     remote.dialog.showMessageBox(remote.getCurrentWindow(), {
       type: 'question',
