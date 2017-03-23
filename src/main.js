@@ -13,9 +13,12 @@ const _ = require('lodash');
 const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const log = require('electron-log');
-const {safe_join, ChrootFS} = require('./chrootfs.js');
+const {safe_join} = require('./chrootfs.js');
 const {autoUpdater} = require("electron-updater");
 const {GroupSemaphore} = require('./locks.js');
+const {showPreferenceWindow, getPrefValue} = require('./prefs/prefs.js');
+
+const OPEN_DEVTOOLS = process.env.OPEN_DEVTOOLS ? true : false;
 
 autoUpdater.logger = log;
 log.transports.console.level = log.transports.file.level = process.env.LOGLEVEL || 'debug';
@@ -153,8 +156,8 @@ let template = [{
 }]
 
 if (process.platform === 'darwin') {
-  // OS X
-  const name = 'LHTML'; //app.getName();
+  // macOS
+  const name = 'LHTML';
   template.unshift({
     label: name,
     submenu: [
@@ -169,6 +172,14 @@ if (process.platform === 'darwin') {
         click() {
           promptForUpdate();
         },
+      },
+      {type: 'separator'},
+      {
+        label: 'Preferences...',
+        accelerator: 'CmdOrCtrl+,',
+        click() {
+          showPreferenceWindow();
+        }
       },
       {type: 'separator'},
       {
@@ -200,6 +211,16 @@ if (process.platform === 'darwin') {
         click() { app.quit(); }
       },
     ]
+  })
+} else {
+  // Not macOS
+  template[1].submenu.push({type: 'separator'})
+  template[1].submenu.push({
+    label: 'Preferences...',
+    accelerator: 'CmdOrCtrl+,',
+    click() {
+      showPreferenceWindow();
+    }
   })
 }
 
@@ -333,6 +354,9 @@ function createLHTMLWindow() {
     show: false,
   });
   win.on('ready-to-show', () => {
+    if (OPEN_DEVTOOLS) {
+      win.webContents.openDevTools('right');
+    }
     win.show();
   })
   win.on('resize', () => {
@@ -361,6 +385,7 @@ function createLHTMLWindow() {
       if (choice === 1) {
         ev.preventDefault();
         win.close_promise && win.close_promise(false);
+        win.webContents.closeDevTools();
       }
     }
   })
@@ -401,7 +426,6 @@ class Document {
   //
   // @param path: Path to file being opened.
   constructor(path) {
-    this._chroot = null;
     this.window_id = null;
     this.lock = new GroupSemaphore({
       save: 'single',
@@ -434,12 +458,6 @@ class Document {
     }
     return this._working_dir;
   }
-  get chroot() {
-    if (!this._chroot) {
-      this._chroot = new ChrootFS(this.working_dir);
-    }
-    return this._chroot;
-  }
   close() {
     return new Promise((resolve, reject) => {
       if (this._tmpdir) {
@@ -450,7 +468,6 @@ class Document {
         }
         this._tmpdir = null;
         this._working_dir = null;
-        this._chroot = null;
         resolve(null);
       }
     })
@@ -486,6 +503,8 @@ class Document {
     return this._updateWorkingDirFromSaveData()
     .then(() => {
       return this.lock.run('save', () => {
+        console.log('this.working_dir', this.working_dir);
+        console.log('this.save_path', this.save_path);
         if (this.is_directory) {
           // done, it's already saved
         } else {
@@ -498,6 +517,7 @@ class Document {
         RPC.call('emit_event', {'key': 'saved', 'data': null}, guest);
       })
     }, err => {
+      log.error(err);
       RPC.call('emit_event', {'key': 'save-failed', 'data': null}, guest);
     })
   }
@@ -534,13 +554,11 @@ class Document {
             log.debug('dir -> dir');
 
             this._working_dir = null;
-            this._chroot = null;
           } else {
             log.debug('dir -> file');
 
             this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
             this._working_dir = this._tmpdir.name;
-            this._chroot = null;
             fs.copySync(this.save_path, this._working_dir) 
           }
           this.emitWorkingDir();
@@ -753,7 +771,7 @@ function openPath(path) {
   var dirPath;
   let doc = new Document(path);
   try {
-    let chroot = doc.chroot;
+    let working_dir = doc.working_dir;
   } catch (err) {
     dialog.showErrorBox("Error opening file", "Filename: " + path + "\n\n" + err);
     return;
@@ -899,9 +917,13 @@ function toggleDocumentDevTools() {
   currentWindow().webContents.send('toggleDevTools');
 }
 
-
 function currentWindow() {
   let win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    while (win.webContents.hostWebContents) {
+      win = BrowserWindow.fromWebContents(win.webContents.hostWebContents);
+    }
+  }
   return win;
 }
 function currentWebViewWebContents() {

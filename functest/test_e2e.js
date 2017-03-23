@@ -37,13 +37,19 @@ function executeJavaScript(web, func) {
     return result;
   })
   .catch(err => {
-    console.log('error', err);
+    console.error('error', err);
   })
 }
 
 function readFromZip(zipfile, path) {
   let zip = new AdmZip(zipfile);
   return zip.readFile(path);
+}
+
+function nonDevToolsWebContents() {
+  return _.filter(webContents.getAllWebContents(), wc => {
+    return ! wc.getURL().startsWith('chrome-devtools://');
+  })
 }
 
 function openDocument(path) {
@@ -53,7 +59,7 @@ function openDocument(path) {
   })
   .then(() => {
     return waitUntil(function() {
-      return webContents.getAllWebContents().length == 2;
+      return nonDevToolsWebContents().length == 2;
     })
   })
   .then(() => {
@@ -66,7 +72,7 @@ function openDocument(path) {
   .then(() => {
     let webview;
     let container;
-    _.each(webContents.getAllWebContents(), wc => {
+    _.each(nonDevToolsWebContents(), wc => {
       if (wc.getURL().startsWith('lhtml://')) {
         webview = wc;
       } else {
@@ -83,7 +89,7 @@ function openDocument(path) {
 function reloadDocument() {
   reloadFocusedDoc()
   return waitUntil(function() {
-    return _.filter(webContents.getAllWebContents(), wc => {
+    return _.filter(nonDevToolsWebContents(), wc => {
       return wc.isLoading();
     }).length === 0;
   })
@@ -124,7 +130,6 @@ describe('app launch', function() {
     let workdir;
     beforeEach(() => {
       workdir = Tmp.dirSync({unsafeCleanup: true}).name;
-      console.log('working in', workdir);
     });
 
     describe('from LHTML dir,', function() {

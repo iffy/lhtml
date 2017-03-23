@@ -29,7 +29,7 @@ class RPCService {
       message.sender_id = this._sender_id;
     }
     log.info(`RPC[${message_id}] ${message.method} call`);
-    log.debug('params', params);
+    log.debug(`RPC[${message_id}] params`, params);
     return new Promise((resolve, reject) => {
       this._pending[message_id] = {
         resolve: resolve,
@@ -49,7 +49,7 @@ class RPCService {
   }
   request_received(event, message) {
     log.info(`RPC[${message.id}] ${message.method} req`);
-    log.debug('MESSAGE', message);
+    log.debug(`RPC[${message.id}] message`, message);
     let receiver = this.DEFAULT_RESPONSE_RECEIVER || event.sender;
     let handler = this.handlers[message.method];
     if (!handler) {
@@ -69,14 +69,14 @@ class RPCService {
       }
       return response.then((result) => {
         log.info(`RPC[${message.id}] ${message.method} done`);
-        log.debug(result);
+        log.debug(`RPC[${message.id}] -> result`, result);
         receiver.send('rpc-response', {
           id: message.id,
           result: result,
         })
       }, (error) => {
         log.info(`RPC[${message.id}] ${message.method} error`);
-        log.debug(error);
+        log.debug(`RPC[${message.id}] -> error`, error);
         receiver.send('rpc-response', {
           id: message.id,
           error: error,
@@ -86,7 +86,7 @@ class RPCService {
   }
   response_received(event, response) {
     log.info(`RPC[${response.id}] response`);
-    log.debug(response);
+    log.debug(`RPC[${response.id}] <- response`, response);
     var handler = this._pending[response.id];
     delete this._pending[response.id];
     if (response.error) {

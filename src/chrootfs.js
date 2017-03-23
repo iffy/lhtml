@@ -65,11 +65,18 @@ class ChrootFS {
   //
   // lock - if given, a class with a `run(func)` method that requests
   //        a file access lock for reading/writing
+  // options.increaseSizePrompt - a function that will be called
+  //        if a write operation would exceed the maxBytes allowed
+  //        for this document.  Spec is:
+  //        (requestedMaxBytes, currentMaxBytes) => { return newMaxBytes };
+  //        to deny the request, return currentMaxBytes
+  //        to allow the request, return requestedMaxBytes (or higher)
   constructor(path, options, lock) {
     options = options || {};
     this._root = null;
     this._tmp_root = Path.resolve(path);
     this.maxBytes = options.maxBytes || (10 * 2 ** 20);
+    this.increaseSizePrompt = options.increaseSizePrompt || (() => { return this.maxBytes; });
     this.lock = lock || (new FakeLock());
   }
   setRoot(path) {
@@ -111,7 +118,15 @@ class ChrootFS {
         .then(size => {
           let projected_size = size + data.length;
           if (projected_size > this.maxBytes) {
-            throw new TooBigError("This operation will exceed the max size of " + this.maxBytes);
+            return Promise.resolve(this.increaseSizePrompt(projected_size, this.maxBytes))
+            .then(newMaxBytes => {
+              if (newMaxBytes >= projected_size) {
+                this.maxBytes = newMaxBytes;
+                return abspath;
+              } else {
+                throw new TooBigError("This operation will exceed the max size of " + this.maxBytes);
+              }
+            })
           } else {
             return abspath;
           }

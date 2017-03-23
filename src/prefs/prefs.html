@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LHTML Preferences</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    html,
+    body {
+      font-size: 13.5px;
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    .wrap {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      align-items: stretch;
+      align-content: stretch;
+    }
+    .panel {
+      background-color: rgba(236,236,236,1);
+      padding: 18px;
+      flex-grow: 1;
+    }
+    .inputlist th {
+      text-align: right;
+      font-weight: normal;
+      vertical-align: top;
+    }
+    .inputlist td {
+      text-align: left;
+      vertical-align: top;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <table class="inputlist">
+      <tr>
+        <th>Maximum document size:</th>
+        <td>
+          <input type="number" value="10" style="width: 50px;" data-pref="max_doc_size" min="5"> MB
+        </td>
+      </tr>
+      <tr>
+        <th></th>
+        <td><button id="save-button">Save</button></td>
+      </tr>
+      </table>
+    </div>
+  </div>
+<script>
+const {remote} = require('electron');
+const fs = require('fs-extra');
+const $ = require('jquery');
+const _ = require('lodash');
+const {getDefaultPrefs, sanitizePref, sanitizePrefs} = require('./prefs.js');
+
+// Load current prefs
+let current_settings = getDefaultPrefs();
+let settings_filename = location.hash.substr(1);
+try {
+  current_settings = fs.readJsonSync(settings_filename)
+} catch(err) {
+  console.info('Error reading preferences.json:', err);
+}
+
+// Set current prefs
+_.each(current_settings, (v,k) => {
+  let pref_inputs = $('*[data-pref]');
+  _.each(pref_inputs, input => {
+    let key = input.getAttribute('data-pref');
+    input.value = current_settings[key];
+  })
+})
+
+// Save new prefs
+document.getElementById('save-button').addEventListener('click', ev => {
+  let pref_inputs = $('*[data-pref]');
+  _.each(pref_inputs, input => {
+    let key = input.getAttribute('data-pref');
+    try {
+      current_settings[key] = sanitizePref(key, input.value);
+      input.value = current_settings[key];
+    } catch(err) {
+      console.error('Error setting preference:', key, err);
+    }
+  })
+  current_settings = sanitizePrefs(current_settings);
+  fs.writeJsonSync(settings_filename, current_settings);
+  setTimeout(() => {
+    remote.getCurrentWindow().close();
+  }, 200);
+});
+</script>
+</body>
+</html>

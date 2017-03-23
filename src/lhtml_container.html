@@ -18,9 +18,16 @@ See LICENSE for details.
     <webview id="theview" autosize="on" disableguestresize style="width: 100vw; height: 100vh;" partition="persist:webviews" preload="./guest/preload.js"></webview>
 <script>
 const {ipcRenderer} = require('electron');
+const OPEN_DEVTOOLS = process.env.OPEN_DEVTOOLS ? true : false;
+
 
 onload = () => {
   const webview = document.getElementById('theview');
+  if (OPEN_DEVTOOLS) {
+    webview.addEventListener('dom-ready', () => {
+      webview.openDevTools()
+    })
+  }
   
   // Handle main -> guest communication
   ipcRenderer.on('rpc', (event, message) => {

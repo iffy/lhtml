@@ -4,13 +4,14 @@
 //
 // This script is executed right when an LHTML file is loaded.
 //
-const {ipcRenderer} = require('electron');
+const {ipcRenderer, remote} = require('electron');
 const {RPCService} = require('../rpc.js');
 const _ = require('lodash');
 const formsync = require('./formsync.js');
 const {ChrootFS} = require('../chrootfs.js');
 const {RPCLock} = require('../locks.js');
 const log = require('electron-log');
+const {getPrefValue} = require('../prefs/prefs.js');
 
 log.transports.console.level = process.env.JS_LOGLEVEL || 'warn';
 
@@ -36,6 +37,7 @@ RPC.handlers = {
     if (LHTML.saving.onBeforeSave) {
       p = Promise.resolve(LHTML.saving.onBeforeSave());
     } else {
+      console.log('no onBeforeSave');
       p = Promise.resolve({})
     }
     return p.then(() => {
@@ -45,7 +47,6 @@ RPC.handlers = {
     })
   },
   set_chrootfs_root: (ctx, new_root) => {
-    console.log('setting new root to', new_root);
     if (chfs) {
       chfs.setRoot(new_root);
     }
@@ -100,10 +101,47 @@ _.each(fs_attrs, attr => {
   }
 })
 
+const MEG = 2 ** 20;
+
+function ceilToNearest(x, nearest) {
+  return Math.ceil(x/nearest)*nearest;
+}
+
+let maxBytes = (parseInt(getPrefValue('max_doc_size')) * MEG);
+maxBytes = maxBytes < (5 * MEG) ? (5 * MEG) : maxBytes;
+
+function increaseSizePrompt(requestedSize, currentMaxBytes) {
+  let currentmax_MB = Math.ceil(currentMaxBytes / MEG);
+  let requested_MB = Math.ceil(requestedSize / MEG);
+  let reasonable_MB = ceilToNearest(requested_MB * 1.1, 5);
+  let message = `This document is requesting ${requested_MB}MB of space which exceeds the limit set in Preferences (${currentmax_MB}MB).  Do you want to allow it?`;
+  return new Promise((resolve, reject) => {
+    remote.dialog.showMessageBox(remote.getCurrentWindow(), {
+      type: 'question',
+      message: message,
+      buttons: [
+        "No",
+        `Allow ${reasonable_MB}MB for now`,
+      ],
+      defaultId: 0,
+      cancelId: 0,
+    }, response => {
+      if (response === 1) {
+        // Allow size increase temporarily
+        maxBytes = reasonable_MB * MEG;
+      }
+      resolve(maxBytes);
+    })
+  });
+}
+
 window.addEventListener('load', () => {
   RPC.call('get_chrootfs_root')
   .then(chrootfs_root => {
-    chfs = new ChrootFS(chrootfs_root, null, rpc_lock);
+    chfs = new ChrootFS(chrootfs_root, {
+      maxBytes: maxBytes,
+      increaseSizePrompt: increaseSizePrompt,
+    }, rpc_lock);
     _.each(fs_attrs, attr => {
       LHTML.fs[attr] = (...args) => {
         return chfs[attr](...args);
@@ -130,6 +168,7 @@ LHTML.saving = {};
 // Perform any writing that needs to happen before saving.
 //
 LHTML.saving.onBeforeSave = () => {
+  console.log('onBeforeSave');
   // Thanks http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript/10162353#10162353
   let doctype = '';
   let node = document.doctype;
