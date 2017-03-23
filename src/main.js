@@ -378,14 +378,16 @@ function createLHTMLWindow() {
     if (win.isDocumentEdited()) {
       let choice = dialog.showMessageBox(win, {
         type: 'question',
-        buttons: ['Close', "Don't close"],
-        title: 'Confirm',
-        message: 'Unsaved changes will be lost.  Are you sure you want to close this document?'
+        buttons: ['Cancel', 'Close without saving'],
+        cancelId: 0,
+        defaultId: 0,
+        title: 'Unsaved Changes',
+        message: "Do you want to save the changes you made in this document?",
+        detail: "Your changes will be lost if you don't save them.",
       });
-      if (choice === 1) {
+      if (choice === 0) {
         ev.preventDefault();
         win.close_promise && win.close_promise(false);
-        win.webContents.closeDevTools();
       }
     }
   })
