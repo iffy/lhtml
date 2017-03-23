@@ -917,9 +917,13 @@ function toggleDocumentDevTools() {
   currentWindow().webContents.send('toggleDevTools');
 }
 
-
 function currentWindow() {
   let win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    while (win.webContents.hostWebContents) {
+      win = BrowserWindow.fromWebContents(win.webContents.hostWebContents);
+    }
+  }
   return win;
 }
 function currentWebViewWebContents() {
