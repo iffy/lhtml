@@ -46,10 +46,7 @@ describe('ChrootFS', function() {
         let chfs = new ChrootFS(tmpdir, {
           maxBytes: 1000,
         });
-        let contents = '';
-        for (var i = 0; i < 1001; i++) {
-          contents += 'A';
-        }
+        let contents = 'A'.repeat(1001);
         return chfs.writeFile('hello', contents)
           .then(() => {}, () => {})
           .then(() => {
@@ -62,14 +59,24 @@ describe('ChrootFS', function() {
           });
       });
 
+      it('with prompting', () => {
+        let chfs = new ChrootFS(tmpdir, {
+          maxBytes: 500,
+          increaseSizePrompt: (() => { return 1500; }),
+        });
+        let contents = 'A'.repeat(1000);
+        return chfs.writeFile('hello', contents)
+          .then(() => {}, () => {})
+          .then(() => {
+            return chfs.readFile('hello');
+          })
+      });
+
       it('with subdirectories full of files', () => {
         let chfs = new ChrootFS(tmpdir, {
           maxBytes: 1000,
         });
-        let contents = '';
-        for (var i = 0; i < 501; i++) {
-          contents += 'A';
-        }
+        let contents = 'A'.repeat(501);
 
         return chfs.writeFile('something/here', contents)
           .then(() => {

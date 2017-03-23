@@ -13,7 +13,7 @@ const _ = require('lodash');
 const Tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const log = require('electron-log');
-const {safe_join, ChrootFS} = require('./chrootfs.js');
+const {safe_join} = require('./chrootfs.js');
 const {autoUpdater} = require("electron-updater");
 const {GroupSemaphore} = require('./locks.js');
 const {showPreferenceWindow, getPrefValue} = require('./prefs/prefs.js');
@@ -420,7 +420,6 @@ class Document {
   //
   // @param path: Path to file being opened.
   constructor(path) {
-    this._chroot = null;
     this.window_id = null;
     this.lock = new GroupSemaphore({
       save: 'single',
@@ -453,16 +452,6 @@ class Document {
     }
     return this._working_dir;
   }
-  get chroot() {
-    if (!this._chroot) {
-      let maxBytes = (parseInt(getPrefValue('max_doc_size')) * 2 ** 20);
-      maxBytes = maxBytes < (5 * 2 ** 20) ? (5 * 2 ** 20) : maxBytes;
-      this._chroot = new ChrootFS(this.working_dir, {
-        maxBytes: maxBytes,
-      });
-    }
-    return this._chroot;
-  }
   close() {
     return new Promise((resolve, reject) => {
       if (this._tmpdir) {
@@ -473,7 +462,6 @@ class Document {
         }
         this._tmpdir = null;
         this._working_dir = null;
-        this._chroot = null;
         resolve(null);
       }
     })
@@ -557,13 +545,11 @@ class Document {
             log.debug('dir -> dir');
 
             this._working_dir = null;
-            this._chroot = null;
           } else {
             log.debug('dir -> file');
 
             this._tmpdir = Tmp.dirSync({unsafeCleanup: true});
             this._working_dir = this._tmpdir.name;
-            this._chroot = null;
             fs.copySync(this.save_path, this._working_dir) 
           }
           this.emitWorkingDir();
@@ -776,7 +762,7 @@ function openPath(path) {
   var dirPath;
   let doc = new Document(path);
   try {
-    let chroot = doc.chroot;
+    let working_dir = doc.working_dir;
   } catch (err) {
     dialog.showErrorBox("Error opening file", "Filename: " + path + "\n\n" + err);
     return;

@@ -45,7 +45,7 @@
       <tr>
         <th>Maximum document size:</th>
         <td>
-          <input type="number" value="10" style="width: 50px;" data-pref="max_doc_size"> MB
+          <input type="number" value="10" style="width: 50px;" data-pref="max_doc_size" min="5"> MB
         </td>
       </tr>
       <tr>
@@ -56,10 +56,11 @@
     </div>
   </div>
 <script>
+const {remote} = require('electron');
 const fs = require('fs-extra');
 const $ = require('jquery');
 const _ = require('lodash');
-const {getDefaultPrefs} = require('./prefs.js');
+const {getDefaultPrefs, sanitizePref, sanitizePrefs} = require('./prefs.js');
 
 // Load current prefs
 let current_settings = getDefaultPrefs();
@@ -84,10 +85,18 @@ document.getElementById('save-button').addEventListener('click', ev => {
   let pref_inputs = $('*[data-pref]');
   _.each(pref_inputs, input => {
     let key = input.getAttribute('data-pref');
-    current_settings[key] = input.value;
+    try {
+      current_settings[key] = sanitizePref(key, input.value);
+      input.value = current_settings[key];
+    } catch(err) {
+      console.error('Error setting preference:', key, err);
+    }
   })
-  // XXX probably ought to do some kind of validation
+  current_settings = sanitizePrefs(current_settings);
   fs.writeJsonSync(settings_filename, current_settings);
+  setTimeout(() => {
+    remote.getCurrentWindow().close();
+  }, 200);
 });
 </script>
 </body>

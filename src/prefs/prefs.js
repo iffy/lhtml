@@ -1,6 +1,11 @@
-const {BrowserWindow, app} = require('electron');
+let {BrowserWindow, app, remote} = require('electron');
 const fs = require('fs-extra');
 const Path = require('path');
+
+if (remote) {
+  // running in a renderer process
+  app = remote.app;
+}
 
 let win;
 
@@ -32,10 +37,25 @@ function showPreferenceWindow() {
   return win;
 }
 
+let PREFERENCES = {
+  max_doc_size: {
+    init: 10,
+    sanitize: x => {
+      let ret = 0;
+      try {
+        ret = parseInt(x);
+      } catch(err) {}
+      return ret < 5 ? 5 : ret;
+    },
+  },
+}
+
 function getDefaultPrefs() {
-  return {
-    max_doc_size: 10,  
-  }
+  return _(PREFERENCES)
+  .map((value, key) => {
+    return [key, value.init];
+  })
+  .zipObject();
 }
 
 function getPrefValue(key) {
@@ -49,4 +69,26 @@ function getPrefValue(key) {
   return current_settings[key];
 }
 
-module.exports = {showPreferenceWindow, getPrefValue, getDefaultPrefs};
+function sanitizePref(key, value) {
+  let def = PREFERENCES[key];
+  if (!def) {
+    // no such preference
+    throw new Error(`No such preference: ${key}`);
+    return;
+  }
+  return def.sanitize(value);
+}
+
+function sanitizePrefs(prefs) {
+  let result = {};
+  _.each(prefs, (v, k) => {
+    try {
+      result[k] = sanitizePref(k, v);
+    } catch(err) {
+      console.error('Error sanitizing pref:', k, err);
+    }
+  })
+  return result;
+}
+
+module.exports = {showPreferenceWindow, getPrefValue, getDefaultPrefs, sanitizePref, sanitizePrefs};

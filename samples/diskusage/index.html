@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>File Size</title>
+</head>
+<body>
+  <button id="inflate">Add 6 MB File</button>
+  <script>
+  document.getElementById('inflate').addEventListener('click', ev => {
+    let ts = (new Date()).valueOf();
+    let filename = `theblob-${ts}.txt`;
+    LHTML.fs.writeFile(filename, 'A'.repeat(6 * 2 ** 20))
+    .then(() => {
+      console.log('Added 6 MB');
+    }, (err) => {
+      console.log('Error adding 6 MB');
+    })
+  })
+  </script>
+</body>
+</html>
