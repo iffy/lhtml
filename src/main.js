@@ -222,6 +222,24 @@ if (process.platform === 'darwin') {
       showPreferenceWindow();
     }
   })
+  const name = 'LHTML';
+  template.push({
+    label: 'Help',
+    submenu: [
+      {
+        label: 'About ' + name,
+        click() {
+          promptForUpdate();
+        },
+      },
+      {
+        label: 'Check for updates...',
+        click() {
+          promptForUpdate();
+        },
+      },
+    ]
+  })
 }
 
 let default_window = null;
