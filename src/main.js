@@ -1,7 +1,7 @@
 // Copyright (c) The LHTML team
 // See LICENSE for details.
 
-const {ipcMain, dialog, app, BrowserWindow, Menu, protocol, webContents, net} = require('electron');
+const {ipcMain, dialog, app, BrowserWindow, Menu, protocol, webContents, net, shell} = require('electron');
 const electron_is = require('electron-is');
 const {session} = require('electron');
 var electron = require('electron');
@@ -153,7 +153,20 @@ let template = [{
       doc_only: true,
     },
   ]
-}]
+}];
+
+let help_menu = {
+  label: 'Help',
+  submenu: [
+    {
+      label: 'Show Logs',
+      click() {
+        showLogFileInFolder();
+      }
+    },
+  ],
+};
+template.push(help_menu);
 
 if (process.platform === 'darwin') {
   // macOS
@@ -168,7 +181,7 @@ if (process.platform === 'darwin') {
         },
       },
       {
-        label: 'Check for updates...',
+        label: 'Check for Updates...',
         click() {
           promptForUpdate();
         },
@@ -223,23 +236,22 @@ if (process.platform === 'darwin') {
     }
   })
   const name = 'LHTML';
-  template.push({
-    label: 'Help',
-    submenu: [
+  help_menu.submenu.splice(0, 0,
+    ...[
       {
         label: 'About ' + name,
         click() {
           promptForUpdate();
-        },
+        }
       },
       {
-        label: 'Check for updates...',
+        label: 'Check for Updates...',
         click() {
           promptForUpdate();
         },
       },
-    ]
-  })
+      { type: 'separator' },
+    ])
 }
 
 let default_window = null;
@@ -935,6 +947,9 @@ function toggleMainDevTools() {
 }
 function toggleDocumentDevTools() {
   currentWindow().webContents.send('toggleDevTools');
+}
+function showLogFileInFolder() {
+  shell.showItemInFolder(log.transports.file.file);
 }
 
 function currentWindow() {
