@@ -4,6 +4,8 @@ Promise.promisifyAll(fs);
 var Path = require('path');
 const klaw = require('klaw');
 const _ = require('lodash');
+const xattr = require('fs-xattr');
+const electron_is = require('electron-is');
 
 class CBPromise {
   constructor() {
@@ -314,5 +316,51 @@ function safe_join() {
   });
 }
 
+//
+// Copy extended attributes from src to dst
+//
+function copy_xattr(src, dst) {
+  return new Promise((resolve, reject) => {
+    if (electron_is.macOS()) {
+      xattr.list(src, (err, list) => {
+        if (err) {
+          throw err;
+        }
+        let promises = _.map(list, key => {
+          return new Promise((inner_resolve, inner_reject) => {
+            xattr.get(src, key, (err, val) => {
+              if (err) {
+                throw err;
+              }
+              xattr.set(dst, key, val, (err) => {
+                if (err) {
+                  throw err;
+                }
+                inner_resolve({key, value:val});
+              })
+            })  
+          })
+        });
+        Promise.all(promises)
+        .then(resolve, reject);
+      });
+    } else if (electron_is.windows()) {
+      // XXX this is untested
+      fs.readFileAsync(src + ':Zone.Identifier')
+      .then(content => {
+        return fs.writeFileAsync(dst + ':Zone.Identifier', content)
+      })
+      .then(result => {
+        resolve(result);
+      })
+      .catch(err => {
+        reject(err);
+      })
+    } else {
+      // No support for extended attributes
+    }
+  })
+}
 
-module.exports = {ChrootFS, TooBigError, safe_join};
+
+module.exports = {ChrootFS, TooBigError, safe_join, copy_xattr};

@@ -951,6 +951,12 @@ fs-extra@^2.0.0:
     graceful-fs "^4.1.2"
     jsonfile "^2.1.0"
 
+fs-xattr@^0.1.15:
+  version "0.1.15"
+  resolved "https://registry.yarnpkg.com/fs-xattr/-/fs-xattr-0.1.15.tgz#86e162ac2727e66b22fcbb45ebd20c5793e7abf4"
+  dependencies:
+    nan "^2.3.2"
+
 fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
@@ -1629,6 +1635,10 @@ ms@0.7.1:
 ms@0.7.2:
   version "0.7.2"
   resolved "https://registry.yarnpkg.com/ms/-/ms-0.7.2.tgz#ae25cf2512b3885a1d95d7f037868d8431124765"
+
+nan@^2.3.2:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.6.1.tgz#8c84f7b14c96b89f57fbc838012180ec8ca39a01"
 
 node-emoji@^1.5.1:
   version "1.5.1"

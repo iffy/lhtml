@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+<button id="foo">Export something.json</button>
+<script>
+if (window.LHTML) {
+  document.getElementById('foo').addEventListener('click', () => {
+    LHTML.saving.exportFile('test.json', JSON.stringify({"foo": "bar", "one": 1}))
+    .then(result => {
+      console.log('saved', result);
+    })
+  })
+}
+</script>
+</body>
+</html>

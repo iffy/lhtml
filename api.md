@@ -10,6 +10,7 @@ These are the functions available to authors of LHTML documents available in the
 | [`fs.writeFile(...)`](#fswritefile) | Overwrite a file within the document zip |
 | [`on(...)`](#on) | Listen for events |
 | [`saving.disableFormSync()`](#savingdisableformsync) | Called to disable automatic form saving |
+| [`saving.exportFile(...)` ](#savingexportfile) | Export data to be saved as a file by the user |
 | [`saving.onBeforeSave`](#savingonbeforesave) | Function called just prior to saving the file. |
 | [`saving.save()`](#savingsave) | Programatically start saving the current document |
 | [`saving.setDocumentEdited(...)`](#savingsetdocumentedited) | Indicate that there are changes to be saved |
@@ -133,6 +134,29 @@ Usage:
         <option>Blue</option>
     </select>
 </body>
+```
+
+### `saving.exportFile(...)`
+
+`saving.exportFile(filename, content, [encoding='utf8'])`
+
+Prompt the user to save a file to their disk (outside the LHTML document).  **Currently this may only be called in response to a click event.**
+
+Returns a Promise that will contain the `filename` the user chose.
+
+Usage:
+
+```html
+<button id="button">Save something.txt</button>
+<script>
+if (window.LHTML) {
+  document.getElementById('button').addEventListener('click', function() {
+    LHTML.saving.exportFile('something.txt', 'the contents').then(function(result) {
+      console.log('saved ' + result.filename);
+    })
+  })
+}
+</script>
 ```
 
 ### `saving.onBeforeSave(...)`
