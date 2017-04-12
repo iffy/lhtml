@@ -8,9 +8,11 @@ const {ipcRenderer, remote} = require('electron');
 const {RPCService} = require('../rpc.js');
 const _ = require('lodash');
 const formsync = require('./formsync.js');
-const {ChrootFS} = require('../chrootfs.js');
+const fs = require('fs-extra');
+const {ChrootFS, safe_join, copy_xattr} = require('../chrootfs.js');
 const {RPCLock} = require('../locks.js');
 const log = require('electron-log');
+const electron_is = require('electron-is');
 const {getPrefValue} = require('../prefs/prefs.js');
 
 log.transports.console.level = process.env.JS_LOGLEVEL || 'warn';
@@ -165,12 +167,15 @@ window.addEventListener('load', () => {
 //---------------------------
 // Saving stuff
 //---------------------------
+
+//---------------------------
+// Saving stuff
+//---------------------------
 LHTML.saving = {};
 //
 // Perform any writing that needs to happen before saving.
 //
 LHTML.saving.onBeforeSave = () => {
-  console.log('onBeforeSave');
   // Thanks http://stackoverflow.com/questions/6088972/get-doctype-of-an-html-as-string-with-javascript/10162353#10162353
   let doctype = '';
   let node = document.doctype;
@@ -229,6 +234,56 @@ LHTML.on('save-failed', () => {
   DOC_EDITED = DOC_EDITED || TMP_DOC_EDITED;
   RPC.call('set_document_edited', DOC_EDITED);
 })
+
+//
+// export a file outside the document
+//
+LHTML.saving.exportFile = (filename, content, encoding) => {
+  let ev = window.event;
+  return new Promise((resolve, reject) => {
+    if (!ev || ev.type !== 'click') {
+      // For (over)protection, at this point, downloads can
+      // only be initiated within an event.
+      throw new Error("exportFile may only be called in response to clicks");
+    }
+    safe_join(remote.app.getPath('downloads'), filename)
+    .then(path => {
+      return new Promise((resolve, reject) => {
+        remote.dialog.showSaveDialog(remote.getCurrentWindow(), {
+          defaultPath: path,
+        }, filename => {
+          if (filename) {
+            resolve(filename);
+          } else {
+            reject(null);
+          }
+        });
+      })
+    })
+    .then(filename => {
+      // actually save the file
+      return fs.writeFileAsync(filename, content, {encoding})
+      .then(() => {
+        return filename;
+      });
+    })
+    .then(filename => {
+      // copy extended attribute over
+      return RPC.call('get_document_path')
+      .then(source_file => {
+        return copy_xattr(source_file, filename)
+        .then(() => {
+          return filename;
+        });  
+      });
+    })
+    .then(filename => {
+      resolve({filename});
+    }, err => {
+      reject(err);
+    })
+  })
+}
 
 //
 // form-sync default

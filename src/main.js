@@ -997,6 +997,10 @@ RPC.handlers = {
     let doc = OPENDOCUMENTS[ctx.sender_id];
     return doc.working_dir;
   },
+  get_document_path: (ctx) => {
+    let doc = OPENDOCUMENTS[ctx.sender_id];
+    return doc.save_path;
+  },
   suggest_size: (ctx, size) => {
     let window_id = OPENDOCUMENTS[ctx.sender_id].window_id;
     let win = BrowserWindow.fromId(window_id);

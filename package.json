@@ -9,7 +9,8 @@
     "test": "test/runtests.sh",
     "pack": "build --dir",
     "dist": "build",
-    "postinstall": "install-app-deps"
+    "postinstall": "install-app-deps",
+    "start": "electron ."
   },
   "devDependencies": {
     "electron": "^1.6.0",
@@ -68,5 +69,8 @@
     }
   },
   "repository": "git@github.com:iffy/lhtml.git",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "optionalDependencies": {
+    "fs-xattr": "^0.1.15"
+  }
 }
