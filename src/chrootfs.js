@@ -4,7 +4,6 @@ Promise.promisifyAll(fs);
 var Path = require('path');
 const klaw = require('klaw');
 const _ = require('lodash');
-const xattr = require('fs-xattr');
 const electron_is = require('electron-is');
 
 class CBPromise {
@@ -322,6 +321,7 @@ function safe_join() {
 function copy_xattr(src, dst) {
   return new Promise((resolve, reject) => {
     if (electron_is.macOS()) {
+      const xattr = require('fs-xattr');
       xattr.list(src, (err, list) => {
         if (err) {
           throw err;
